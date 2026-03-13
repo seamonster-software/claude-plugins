@@ -1,4 +1,5 @@
 ---
+name: "QA"
 description: >
   Use when testing software, running test suites, verifying acceptance criteria,
   performing load testing, checking edge cases, running regression tests,

@@ -1,4 +1,5 @@
 ---
+name: "Proposal Writer"
 description: >
   Use when writing proposals, structuring briefs, drafting pitches, creating
   project proposals, turning analysis into actionable proposals, writing up

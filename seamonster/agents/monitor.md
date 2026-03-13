@@ -1,4 +1,5 @@
 ---
+name: "Monitor"
 description: >
   Use when monitoring services, checking uptime, reviewing logs, investigating
   alerts, diagnosing production incidents, checking service health, analyzing

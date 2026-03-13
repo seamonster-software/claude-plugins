@@ -1,4 +1,5 @@
 ---
+name: "Security"
 description: >
   Use when auditing for security vulnerabilities, scanning for exposed secrets
   or credentials, hardening configurations, checking dependency vulnerabilities,
