@@ -1,0 +1,14 @@
+{
+  "name": "seamonster-software",
+  "owner": {
+    "name": "Sea Monster Software"
+  },
+  "plugins": [
+    {
+      "name": "seamonster",
+      "source": "./seamonster",
+      "description": "Sea Monster — Autonomous AI Crew. Agents coordinate via git, notify via ntfy, and build/ship/market software 24/7.",
+      "version": "0.1.0"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "seamonster",
+  "version": "0.1.0",
+  "description": "Sea Monster — Autonomous AI Crew. Agents coordinate via git, notify via ntfy, and build/ship/market software 24/7.",
+  "author": {
+    "name": "Sea Monster Software"
+  },
+  "agents": [
+    "./agents/orchestrator.md",
+    "./agents/builder.md",
+    "./agents/reviewer.md",
+    "./agents/deployer.md"
+  ],
+  "skills": [
+    "./skills/gitea-workflow.md",
+    "./skills/ntfy-notify.md",
+    "./skills/contract-patterns.md",
+    "./skills/escalation-protocol.md"
+  ],
+  "commands": [
+    "./commands/crew-status.md",
+    "./commands/spawn.md",
+    "./commands/orders.md",
+    "./commands/voyage.md"
+  ],
+  "hooks": [
+    "./hooks/session-log.js"
+  ]
+}
