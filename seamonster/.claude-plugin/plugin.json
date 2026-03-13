@@ -21,6 +21,7 @@
     "./commands/spawn.md",
     "./commands/orders.md",
     "./commands/voyage.md",
-    "./commands/init.md"
+    "./commands/init.md",
+    "./commands/work.md"
   ]
 }
