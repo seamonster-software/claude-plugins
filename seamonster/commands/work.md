@@ -1,7 +1,5 @@
 ---
-name: "work"
-description: "Poll the bridge for actionable issues and spawn agents to work them. The Captain's 'go work' button."
-user_facing: true
+description: Poll the bridge for actionable issues and spawn agents to work them. The Captain's 'go work' button.
 ---
 
 # /seamonster:work — Work the Queue

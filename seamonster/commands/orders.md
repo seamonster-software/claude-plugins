@@ -1,6 +1,5 @@
 ---
-name: "orders"
-description: "List all open issues across all repos, grouped by action needed: blocked, build-ready, in-progress, proposals."
+description: List all open issues across all repos, grouped by action needed — blocked, build-ready, in-progress, proposals.
 ---
 
 # /orders

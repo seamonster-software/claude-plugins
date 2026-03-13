@@ -1,6 +1,5 @@
 ---
-name: "crew-status"
-description: "Show status of all active work — issues by state, recent activity, blocked items."
+description: Show status of all active work — issues by state, recent activity, blocked items.
 ---
 
 # /crew-status

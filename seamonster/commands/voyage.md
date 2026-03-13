@@ -1,6 +1,5 @@
 ---
-name: "voyage"
-description: "Project overview — all projects, their phase, health, milestone completion, recent deploys, active builds."
+description: Project overview — all projects, their phase, health, milestone completion, recent deploys, active builds.
 ---
 
 # /voyage

@@ -1,7 +1,6 @@
 ---
-name: "spawn"
-description: "Explicitly spawn a specific crew member for a project. Usage: /spawn <crew-member> <project>"
-args: "<crew-member> <project>"
+description: Explicitly spawn a specific crew member for a project. Usage: /spawn <crew-member> <project>
+argument-hint: <crew-member> <project>
 ---
 
 # /spawn <crew-member> <project>

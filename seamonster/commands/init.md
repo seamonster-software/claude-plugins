@@ -1,7 +1,5 @@
 ---
-name: init
 description: Create the Sea Monster bridge repo, scan the org for existing repos, and onboard them with workflows and lib scripts. The single entry point for setting up Sea Monster.
-user_facing: true
 ---
 
 # /seamonster:init — Set Up Sea Monster
