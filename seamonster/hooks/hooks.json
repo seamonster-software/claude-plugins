@@ -1,0 +1,16 @@
+{
+  "description": "Sea Monster session logging and delegation enforcement",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-log.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

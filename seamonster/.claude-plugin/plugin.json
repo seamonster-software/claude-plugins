@@ -25,7 +25,5 @@
     "./commands/voyage.md",
     "./commands/init.md"
   ],
-  "hooks": [
-    "./hooks/session-log.js"
-  ]
+  "hooks": "./hooks/hooks.json"
 }
