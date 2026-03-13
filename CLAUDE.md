@@ -82,6 +82,7 @@ seamonster-software/claude-plugins/
 - Workflows use repo-relative paths (`./lib/`) — no SEAMONSTER_ROOT env var
 - `/seamonster:init` uses `gh` CLI — no raw curl in commands
 - Plugin typeahead requires auto-discovery — no `name` field in command frontmatter, no component arrays in plugin.json
+- Agent frontmatter SHOULD have `name` field; command frontmatter should NOT (agents use name for display, commands use filename)
 - When dispatching multiple builders to same repo, use `isolation: "worktree"` to avoid branch collisions
 - GitHub blocks formal review approvals on own PRs — reviews post as comments instead
 - PRs don't auto-close issues — use "Closes #N" in PR body, or close manually after merge
