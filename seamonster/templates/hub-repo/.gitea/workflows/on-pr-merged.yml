@@ -1,0 +1,80 @@
+name: "Deploy: Spawn Deployer"
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: self-hosted
+    env:
+      GITEA_URL: ${{ secrets.GITEA_URL }}
+      GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+      NTFY_URL: ${{ secrets.NTFY_URL }}
+      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+      SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
+      SEAMONSTER_DOMAIN: ${{ secrets.SEAMONSTER_DOMAIN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract linked issue number
+        id: issue
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+          # Extract issue number from "Closes #N", "Implements #N", or "#N" references
+          ISSUE_NUMBER=$(echo "$PR_BODY" | grep -oP '(?:Closes|Implements|Fixes|Resolves)\s+#\K[0-9]+' | head -1)
+          if [[ -z "$ISSUE_NUMBER" ]]; then
+            ISSUE_NUMBER=$(echo "$PR_BODY" | grep -oP '#\K[0-9]+' | head -1)
+          fi
+          echo "number=${ISSUE_NUMBER:-0}" >> "$GITHUB_OUTPUT"
+
+      - name: Spawn Deployer
+        run: |
+          source "./lib/claude-runner.sh"
+
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.event.repository.name }}"
+          ISSUE_NUMBER="${{ steps.issue.outputs.number }}"
+
+          PROMPT=$(cat <<ENDPROMPT
+          PR #${PR_NUMBER} has been merged to main. Deploy the changes.
+
+          Follow this process:
+          1. Pull the latest main branch
+          2. Build/install dependencies as needed (detect project type from package.json, requirements.txt, go.mod, etc.)
+          3. Create or update deployment configuration (Traefik route, systemd service, etc.) if this is a web service
+          4. Run a health check to verify the deployment
+          5. Post a deployment status comment on issue #${ISSUE_NUMBER} with the live URL
+          6. Notify the ops ntfy topic with the deployment result
+
+          If the deployment fails:
+          - Roll back to the previous known-good state
+          - Post error details on the issue
+          - Notify the urgent ntfy topic
+
+          Use ./lib/gitea-api.sh for all issue interactions.
+          Use ./lib/notify.sh for notifications.
+
+          The domain for deployed services is: ${SEAMONSTER_DOMAIN}
+          Services are reachable at: https://${REPO}.${SEAMONSTER_DOMAIN}
+          ENDPROMPT
+          )
+
+          run_agent_for_issue "Deployer" \
+            "$SEAMONSTER_ORG" \
+            "$REPO" \
+            "$ISSUE_NUMBER" \
+            "$PROMPT"
+
+      - name: Handle failure
+        if: failure()
+        run: |
+          source "./lib/notify.sh"
+
+          REPO="${{ github.event.repository.name }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          ntfy_urgent "Deploy failed — ${REPO}" \
+            "Deployer workflow failed for PR #${PR_NUMBER}. Check workflow logs.\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

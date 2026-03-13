@@ -1,0 +1,74 @@
+name: "Deploy: On Merge to Main"
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    env:
+      GITEA_URL: ${{ secrets.GITEA_URL }}
+      GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+      NTFY_URL: ${{ secrets.NTFY_URL }}
+      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+      SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
+      SEAMONSTER_DOMAIN: ${{ secrets.SEAMONSTER_DOMAIN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get merge context
+        id: context
+        run: |
+          # Get the most recent merged PR for this push
+          source "./lib/gitea-api.sh"
+          REPO="${{ github.event.repository.name }}"
+
+          LATEST_PR=$(gitea_get "/repos/${SEAMONSTER_ORG}/${REPO}/pulls?state=closed&sort=updated&limit=1" | \
+            jq -r '.[0] | select(.merged == true)')
+
+          PR_NUMBER=$(echo "$LATEST_PR" | jq -r '.number // 0')
+          PR_BODY=$(echo "$LATEST_PR" | jq -r '.body // ""')
+
+          # Extract linked issue
+          ISSUE_NUMBER=$(echo "$PR_BODY" | grep -oP '(?:Closes|Implements|Fixes|Resolves)\s+#\K[0-9]+' | head -1)
+          if [[ -z "$ISSUE_NUMBER" ]]; then
+            ISSUE_NUMBER=$(echo "$PR_BODY" | grep -oP '#\K[0-9]+' | head -1)
+          fi
+
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "issue_number=${ISSUE_NUMBER:-0}" >> "$GITHUB_OUTPUT"
+
+      - name: Spawn Deployer
+        run: |
+          source "./lib/claude-runner.sh"
+
+          PR_NUMBER="${{ steps.context.outputs.pr_number }}"
+          ISSUE_NUMBER="${{ steps.context.outputs.issue_number }}"
+          REPO="${{ github.event.repository.name }}"
+
+          DEPLOY_STEPS="1. Pull latest main 2. Build/install dependencies 3. Create or update deployment configuration 4. Health check 5. Notify the ops ntfy topic"
+
+          if [[ "$ISSUE_NUMBER" == "0" || -z "$ISSUE_NUMBER" ]]; then
+            run_claude "Deployer" \
+              "." \
+              "You are the Deployer. A push to main has occurred (PR #${PR_NUMBER}). Deploy the latest changes: ${DEPLOY_STEPS}. Domain: ${SEAMONSTER_DOMAIN}. Service URL: https://${REPO}.${SEAMONSTER_DOMAIN}"
+          else
+            run_agent_for_issue "Deployer" \
+              "$SEAMONSTER_ORG" \
+              "$REPO" \
+              "$ISSUE_NUMBER" \
+              "PR #${PR_NUMBER} has been merged to main. Deploy the changes: ${DEPLOY_STEPS}. Post deploy status on this issue. Domain: ${SEAMONSTER_DOMAIN}. Service URL: https://${REPO}.${SEAMONSTER_DOMAIN}"
+          fi
+
+      - name: Handle failure
+        if: failure()
+        run: |
+          source "./lib/notify.sh"
+
+          REPO="${{ github.event.repository.name }}"
+
+          ntfy_urgent "Deploy failed — ${REPO}" \
+            "Push-to-main deploy failed. Check workflow logs.\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

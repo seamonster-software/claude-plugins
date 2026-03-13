@@ -1,0 +1,78 @@
+name: "Build: Spawn Builder"
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  build:
+    if: github.event.label.name == 'build-ready'
+    runs-on: self-hosted
+    env:
+      GITEA_URL: ${{ secrets.GITEA_URL }}
+      GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+      NTFY_URL: ${{ secrets.NTFY_URL }}
+      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+      SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create issue branch
+        run: |
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          git fetch origin
+          git checkout -b "issue-${ISSUE_NUMBER}"
+          git push -u origin "issue-${ISSUE_NUMBER}"
+
+      - name: Spawn Builder
+        run: |
+          source "./lib/claude-runner.sh"
+
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          REPO="${{ github.event.repository.name }}"
+
+          PROMPT=$(cat <<ENDPROMPT
+          Read the issue carefully. Implement the requirements on the issue-${ISSUE_NUMBER} branch.
+
+          Follow this process:
+          1. Read the project CLAUDE.md for conventions
+          2. Post a comment on the issue with your plan
+          3. Implement the changes with small, focused commits using conventional commit messages (feat, fix, refactor, etc.)
+          4. Reference issue #${ISSUE_NUMBER} in every commit
+          5. When done, push the branch and open a PR linking back to issue #${ISSUE_NUMBER}
+          6. Post a completion comment on the issue
+
+          Use ./lib/gitea-api.sh for all issue/PR interactions.
+          Use ./lib/notify.sh to notify the build topic when the PR is ready.
+          ENDPROMPT
+          )
+
+          run_agent_for_issue "Builder" \
+            "$SEAMONSTER_ORG" \
+            "$REPO" \
+            "$ISSUE_NUMBER" \
+            "$PROMPT"
+
+      - name: Handle failure
+        if: failure()
+        run: |
+          source "./lib/gitea-api.sh"
+          source "./lib/notify.sh"
+
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          REPO="${{ github.event.repository.name }}"
+
+          # Add blocked label
+          blocked_id=$(gitea_get_label_id "$SEAMONSTER_ORG" "$REPO" "status/blocked")
+          if [[ -n "$blocked_id" ]]; then
+            gitea_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" "[$blocked_id]"
+          fi
+
+          # Comment on the issue
+          FAIL_MSG="**Builder** — build workflow failed. The Gitea Action for issue #${ISSUE_NUMBER} exited with an error. Check the workflow logs for details. Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" "$FAIL_MSG"
+
+          # Notify via ntfy
+          ntfy_urgent "Build failed — ${REPO} #${ISSUE_NUMBER}" \
+            "Builder workflow failed for issue #${ISSUE_NUMBER}. Check workflow logs."

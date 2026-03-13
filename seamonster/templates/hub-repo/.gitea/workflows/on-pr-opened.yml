@@ -1,0 +1,30 @@
+name: "Review: Spawn Reviewer"
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: self-hosted
+    env:
+      GITEA_URL: ${{ secrets.GITEA_URL }}
+      GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+      NTFY_URL: ${{ secrets.NTFY_URL }}
+      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+      SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Spawn Reviewer
+        run: |
+          source "./lib/claude-runner.sh"
+
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.event.repository.name }}"
+
+          run_reviewer_for_pr "Reviewer" \
+            "$SEAMONSTER_ORG" \
+            "$REPO" \
+            "$PR_NUMBER"

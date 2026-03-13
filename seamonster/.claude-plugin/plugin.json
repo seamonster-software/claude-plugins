@@ -21,7 +21,8 @@
     "./commands/crew-status.md",
     "./commands/spawn.md",
     "./commands/orders.md",
-    "./commands/voyage.md"
+    "./commands/voyage.md",
+    "./commands/init.md"
   ],
   "hooks": [
     "./hooks/session-log.js"
