@@ -31,10 +31,10 @@ If you find problems, you report them — you do not fix them.
 ### 1. Get the PR Context
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 
 # Get PR details
-pr_json=$(gitea_get "/repos/${SEAMONSTER_ORG}/${REPO}/pulls/${PR_NUMBER}")
+pr_json=$(sm_get "/repos/${SEAMONSTER_ORG}/${REPO}/pulls/${PR_NUMBER}")
 echo "$pr_json" | jq -r '.title, .body'
 
 # Get the diff
@@ -43,7 +43,7 @@ git diff "main...$(echo "$pr_json" | jq -r '.head.ref')"
 # Get the linked issue
 issue_number=$(echo "$pr_json" | jq -r '.body' | grep -oP '#\K[0-9]+' | head -1)
 if [[ -n "$issue_number" ]]; then
-  gitea_get_issue "$SEAMONSTER_ORG" "$REPO" "$issue_number"
+  sm_get_issue "$SEAMONSTER_ORG" "$REPO" "$issue_number"
 fi
 ```
 
@@ -100,9 +100,9 @@ Go through every changed file and evaluate against these criteria:
 #### If approving:
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 
-gitea_approve_pr "$SEAMONSTER_ORG" "$REPO" "$PR_NUMBER" \
+sm_approve_pr "$SEAMONSTER_ORG" "$REPO" "$PR_NUMBER" \
   "**Reviewer** — approved.
 
 ## Summary
@@ -119,9 +119,9 @@ Good to merge."
 #### If requesting changes:
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 
-gitea_review_pr "$SEAMONSTER_ORG" "$REPO" "$PR_NUMBER" \
+sm_review_pr "$SEAMONSTER_ORG" "$REPO" "$PR_NUMBER" \
   "**Reviewer** — changes requested.
 
 ## Issues Found
@@ -156,14 +156,13 @@ ntfy_build "Review complete — ${REPO} PR #${PR_NUMBER}" \
 ### 5. Update Issue Status
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 
 # If approved — add deploy-ready label
-label_id=$(gitea_get_label_id "$SEAMONSTER_ORG" "$REPO" "deploy-ready")
-gitea_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" "[$label_id]"
+sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" '["deploy-ready"]'
 
 # If changes requested — comment on the issue
-gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Reviewer** — PR #${PR_NUMBER} needs changes. See review comments on the PR."
 ```
 
@@ -193,6 +192,6 @@ When reviewing, you are calibrated to these standards:
 3. Categorize issues by severity: critical (must fix), important (should fix), minor (consider).
 4. Always check for hardcoded secrets and security issues.
 5. Always verify against the issue's acceptance criteria.
-6. Post the review via Gitea API so it's part of the permanent record.
+6. Post the review via the git API so it's part of the permanent record.
 7. If the PR is trivially correct (docs, typos, config), still review — but say so concisely.
 8. When approving, summarize what you verified. "LGTM" is not a review.

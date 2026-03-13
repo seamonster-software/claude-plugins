@@ -23,7 +23,7 @@ then enforced during build and review.
 
 ## Contract Format
 
-Store contracts as a section in the Gitea issue body or as a dedicated
+Store contracts as a section in the issue body or as a dedicated
 issue comment. Use this template:
 
 ```markdown
@@ -81,22 +81,22 @@ Wave 1 (parallel)          Wave 2 (parallel)         Wave 3 (sequential)
 
 ### Planning Waves
 
-The Planner creates the wave plan. Each wave becomes a Gitea milestone.
-Each task within a wave becomes a Gitea issue linked to that milestone.
+The Planner creates the wave plan. Each wave becomes a milestone.
+Each task within a wave becomes an issue linked to that milestone.
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 
 # Create milestones for each wave
-gitea_create_milestone "$SEAMONSTER_ORG" "project-alpha" \
+sm_create_milestone "$SEAMONSTER_ORG" "project-alpha" \
   "Wave 1: Foundation" \
   "Database schema, type definitions, config"
 
-gitea_create_milestone "$SEAMONSTER_ORG" "project-alpha" \
+sm_create_milestone "$SEAMONSTER_ORG" "project-alpha" \
   "Wave 2: Services" \
   "Auth, user, email services. Depends on Wave 1."
 
-gitea_create_milestone "$SEAMONSTER_ORG" "project-alpha" \
+sm_create_milestone "$SEAMONSTER_ORG" "project-alpha" \
   "Wave 3: Integration" \
   "API routes, integration tests. Depends on Wave 2."
 ```
@@ -113,7 +113,7 @@ completion:
 
 ```bash
 # Check if Wave 1 milestone is complete
-milestone_json=$(gitea_get "/repos/${SEAMONSTER_ORG}/project-alpha/milestones" | \
+milestone_json=$(sm_get "/repos/${SEAMONSTER_ORG}/project-alpha/milestones" | \
   jq '.[] | select(.title == "Wave 1: Foundation")')
 open=$(echo "$milestone_json" | jq '.open_issues')
 if [[ "$open" -eq 0 ]]; then
@@ -142,8 +142,8 @@ Wave 2 needs a new npm package that Wave 1 owns `package.json`:
 
 ```bash
 # Wave 2 Builder posts a comment on Wave 1's issue
-gitea_comment "$SEAMONSTER_ORG" "project-alpha" "$WAVE1_ISSUE" \
-  "**Builder (Builder)** [Wave 2] — dependency request:
+sm_comment "$SEAMONSTER_ORG" "project-alpha" "$WAVE1_ISSUE" \
+  "**Builder** [Wave 2] — dependency request:
 
 Need \`jsonwebtoken@^9.0.0\` added to package.json for the auth service.
 
@@ -221,7 +221,7 @@ Contracts may need to change during build. The protocol:
 5. If downstream dependencies are affected: escalate to the Planner to
    re-plan, and notify affected agents via issue comments
 
-Never silently change a contract. The change must be visible in the Gitea
+Never silently change a contract. The change must be visible in the
 issue history.
 
 ## Minimal Contracts

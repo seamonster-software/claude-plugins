@@ -7,12 +7,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- `git-api.sh` — unified platform-agnostic git API (`sm_*` functions)
+  - Auto-detects Gitea vs GitHub from environment variables
+  - Normalizes labels (always use names, Gitea ID resolution handled internally)
+  - Auto-converts pagination params (`limit=` ↔ `per_page=`)
+  - High-level functions: `sm_list_issues`, `sm_list_prs`, `sm_list_repos`
 - GitHub Actions workflow templates for bridge and project repos
 - `github-api.sh` lib script — GitHub REST API wrapper matching gitea-api.sh interface
 - `github-workflow` skill — complete GitHub API reference for agents
 - GitHub issue templates for bridge repos (mirroring Gitea templates)
 
 ### Changed
+- All agents now source `git-api.sh` and use `sm_*` functions (platform-agnostic)
+- All commands (crew-status, orders, voyage, spawn) consolidated from dual Gitea/GitHub examples to unified API
+- Skills (contract-patterns, escalation-protocol) updated to use `sm_*` functions
+- `claude-runner.sh` sources `git-api.sh` instead of platform-specific backends
+- Bridge CLAUDE.md template updated with unified API documentation
+- `/seamonster:init` uses platform-specific template directories for bridge/project setup
 - Rewrote `/seamonster:init` command — full 11-step onboarding flow (platform detection, bridge creation, org scan, repo onboarding, secrets config)
 - All lib paths changed from `/opt/seamonster/lib/` to `./lib/` (repo-relative)
 - Deployer paths made configurable via env vars with Sovereign-tier defaults

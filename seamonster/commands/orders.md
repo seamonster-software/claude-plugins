@@ -12,22 +12,13 @@ needed next.
 
 ### Step 1: Gather All Open Issues
 
-Gather all open issues across the org using the appropriate API:
-
-**Gitea:**
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 ORG="${SEAMONSTER_ORG:-seamonster}"
-repos=$(gitea_get "/orgs/${ORG}/repos" | jq -r '.[].name')
+repos=$(sm_list_repos "$ORG" | jq -r '.[].name')
 for repo in $repos; do
-  gitea_get "/repos/${ORG}/${repo}/issues?state=open&limit=50&type=issues"
+  sm_list_issues "$ORG" "$repo"
 done
-```
-
-**GitHub:**
-```bash
-ORG="${SEAMONSTER_ORG}"
-gh search issues --owner "$ORG" --state open --json repository,number,title,labels,updatedAt
 ```
 
 ### Step 2: Group by Category

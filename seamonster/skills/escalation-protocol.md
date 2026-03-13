@@ -80,12 +80,12 @@ The Captain has to do all the thinking.
 
 ## The Escalation Flow
 
-### Step 1: Post the Question on Gitea
+### Step 1: Post the Question
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 
-gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**${CREW_NAME}** — blocked, need a decision.
 
 **Question:** Should user sessions persist across server restarts?
@@ -106,11 +106,8 @@ gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
 ### Step 2: Add Labels
 
 ```bash
-# Mark as blocked and needing input
-blocked_id=$(gitea_get_label_id "$SEAMONSTER_ORG" "$REPO" "status/blocked")
-needs_input_id=$(gitea_get_label_id "$SEAMONSTER_ORG" "$REPO" "needs-input")
-gitea_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
-  "[$blocked_id, $needs_input_id]"
+sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+  '["status/blocked", "needs-input"]'
 ```
 
 ### Step 3: Send ntfy Notification
@@ -129,10 +126,8 @@ ntfy_decision "$CREW_NAME" "$REPO" "$ISSUE_NUMBER" \
 Check for other unblocked work:
 
 ```bash
-source ./lib/gitea-api.sh
-
 # Find other issues assigned to this agent's team that are not blocked
-other_issues=$(gitea_get "/repos/${SEAMONSTER_ORG}/${REPO}/issues?state=open&limit=50" | \
+other_issues=$(sm_list_issues "$SEAMONSTER_ORG" "$REPO" | \
   jq '[.[] | select(.labels | map(.name) |
     (contains(["build-ready"]) or contains(["team/build"])) and
     (contains(["status/blocked"]) | not) and
@@ -155,24 +150,24 @@ fi
 
 The Captain responds in one of three ways:
 
-1. **ntfy action button** — taps a button, which POSTs a comment to the Gitea issue
-2. **Gitea issue comment** — writes a comment directly
+1. **ntfy action button** — taps a button, which POSTs a comment to the issue
+2. **Issue comment** — writes a comment directly
 3. **No response** — the agent works on other things; the issue stays blocked
 
 When a response arrives:
-1. The `on-needs-input.yml` Gitea Action detects the new comment
+1. The `on-needs-input` workflow detects the new comment
 2. It removes the `needs-input` label
 3. It removes the `status/blocked` label
 4. It re-spawns the agent with the decision context
 
-The decision is permanently recorded in the Gitea issue timeline.
+The decision is permanently recorded in the issue timeline.
 
 ## Label Reference
 
 | Label | Meaning | Added By | Removed By |
 |---|---|---|---|
-| `needs-input` | Waiting for Captain's decision | Agent (on escalation) | Gitea Action (on response) |
-| `status/blocked` | Cannot proceed | Agent (on escalation) | Gitea Action (on response) |
+| `needs-input` | Waiting for Captain's decision | Agent (on escalation) | Workflow (on response) |
+| `status/blocked` | Cannot proceed | Agent (on escalation) | Workflow (on response) |
 | `status/active` | Currently being worked on | Agent (on start) | Agent (on completion/block) |
 | `status/waiting` | Queued, not yet started | Orchestrator (on triage) | Agent (on start) |
 
@@ -197,7 +192,7 @@ If a blocked issue receives no response within 48 hours:
 - After 7 days, the Orchestrator (or dispatch workflow) re-sends the notification
 - After 14 days, the issue is flagged in the weekly learnings as "stale blocker"
 
-Agents do not poll for responses. The Gitea Action on `issue_comment` handles
+Agents do not poll for responses. The workflow on `issue_comment` handles
 re-triggering automatically.
 
 ## Multiple Blockers
@@ -223,7 +218,7 @@ Sometimes a question from one agent should be redirected to another:
 When redirecting, the agent comments on the issue tagging the target:
 
 ```bash
-gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Builder** — this is an architecture question. Redirecting to Architect.
 
 **Question:** The data model requires either a relational schema (normalized, SQL)
@@ -236,7 +231,7 @@ service layer. Needs Architect's input before I proceed."
 1. Never stall silently. If you are blocked, escalate.
 2. Always provide options with trade-offs. Never ask open-ended questions.
 3. Always include a recommendation when you have one.
-4. Post the question on Gitea (permanent record) AND send ntfy (immediate alert).
+4. Post the question on the issue (permanent record) AND send ntfy (immediate alert).
 5. Add both `needs-input` and `status/blocked` labels.
 6. After escalating, check for other unblocked work. Do not idle.
 7. When the Captain responds, the decision is final — do not re-ask.

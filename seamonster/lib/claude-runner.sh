@@ -122,24 +122,14 @@ run_claude() {
 run_agent_for_issue() {
   local crew="$1" owner="$2" repo="$3" issue="$4" prompt="$5"
 
-  # Source the appropriate git API wrapper
+  # Source the unified git API wrapper
   local lib_dir
   lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  # shellcheck source=./git-api.sh
+  source "${lib_dir}/git-api.sh"
 
-  if [[ -n "${GITEA_URL:-}" ]]; then
-    # shellcheck source=./gitea-api.sh
-    source "${lib_dir}/gitea-api.sh"
-    local issue_json
-    issue_json=$(gitea_get_issue "$owner" "$repo" "$issue")
-  elif [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    # shellcheck source=./github-api.sh
-    source "${lib_dir}/github-api.sh"
-    local issue_json
-    issue_json=$(github_get_issue "$owner" "$repo" "$issue")
-  else
-    log "ERROR: Neither GITEA_URL nor GITHUB_TOKEN is set"
-    return 1
-  fi
+  local issue_json
+  issue_json=$(sm_get_issue "$owner" "$repo" "$issue")
 
   local issue_title issue_body
   issue_title=$(echo "$issue_json" | jq -r '.title')

@@ -30,9 +30,9 @@ pipelines, Traefik routing, systemd services, and release management.
 Only deploy from merged PRs. Never deploy from branches.
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 
-pr_json=$(gitea_get "/repos/${SEAMONSTER_ORG}/${REPO}/pulls/${PR_NUMBER}")
+pr_json=$(sm_get "/repos/${SEAMONSTER_ORG}/${REPO}/pulls/${PR_NUMBER}")
 merged=$(echo "$pr_json" | jq -r '.merged')
 
 if [[ "$merged" != "true" ]]; then
@@ -172,11 +172,11 @@ fi
 ### 7. Post Deploy Status
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 source ./lib/notify.sh
 
 # Comment on the issue
-gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Deployer** — deployed to production.
 
 **URL:** https://${REPO}.${SEAMONSTER_DOMAIN}
@@ -260,7 +260,7 @@ mkdir -p "$ENV_DIR"
 chmod 700 "$ENV_DIR"
 
 # Create/update env file for the project
-# Values come from Gitea Actions secrets or setup configuration
+# Values come from Actions secrets or setup configuration
 cat > "${ENV_DIR}/${REPO}.env" << ENV
 NODE_ENV=production
 PORT=${PORT}
@@ -273,10 +273,10 @@ chmod 600 "${ENV_DIR}/${REPO}.env"
 
 ## CI/CD Pipeline Setup
 
-For new projects, set up the Gitea Actions workflow:
+For new projects, set up the workflow:
 
 ```yaml
-# .gitea/workflows/deploy.yml
+# .github/workflows/deploy.yml (or .gitea/workflows/deploy.yml)
 name: Deploy on merge
 on:
   pull_request:
@@ -298,8 +298,7 @@ jobs:
             "${{ github.event.pull_request.number }}" \
             "Deploy the changes from this merged PR to production."
         env:
-          GITEA_URL: ${{ secrets.GITEA_URL }}
-          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NTFY_URL: ${{ secrets.NTFY_URL }}
 ```
 
@@ -308,15 +307,15 @@ jobs:
 If deployment fails and you cannot resolve it:
 
 1. Stop the broken deployment (rollback if needed)
-2. Post detailed error logs to the Gitea issue
+2. Post detailed error logs to the issue
 3. Add `needs-input` and `status/blocked` labels
 4. Notify via ntfy urgent topic
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 source ./lib/notify.sh
 
-gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Deployer** — deployment failed. Need help.
 
 **Error:**
@@ -334,8 +333,7 @@ A. Fix the build issue (likely a Builder task)
 B. Investigate infrastructure (likely a Sysadmin task)
 C. Skip this deploy and move to next task"
 
-label_id=$(gitea_get_label_id "$SEAMONSTER_ORG" "$REPO" "needs-input")
-gitea_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" "[$label_id]"
+sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" '["needs-input", "status/blocked"]'
 
 ntfy_urgent "Deploy failed — ${REPO}" \
   "Rolled back to previous version. See issue #${ISSUE_NUMBER} for details."
@@ -347,7 +345,7 @@ ntfy_urgent "Deploy failed — ${REPO}" \
 2. Always health check after deployment.
 3. Always have a rollback plan before deploying.
 4. Never commit secrets. Use environment files with restricted permissions.
-5. Post deploy status to both Gitea (permanent record) and ntfy (immediate notification).
+5. Post deploy status to both the issue (permanent record) and ntfy (immediate notification).
 6. Traefik configs go in the dynamic directory — never modify the static config.
 7. systemd services use the `seamonster-` prefix for easy identification.
 8. If health check fails, rollback automatically and alert.

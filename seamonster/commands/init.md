@@ -70,7 +70,7 @@ Check if a `bridge` repo already exists in the org. If it does, ask the user if 
 
 Create the repo:
 - **GitHub:** `gh repo create $ORG/bridge --public --description "Sea Monster Bridge — Captain's command center" --clone`
-- **Gitea:** Use the gitea_create_repo function from lib/gitea-api.sh, then clone it
+- **Gitea:** Use the gitea_create_repo function from lib/gitea-api.sh (or `sm_create_repo` from git-api.sh), then clone it
 
 Clone the new repo to a temp directory:
 ```bash
@@ -82,17 +82,26 @@ cd bridge
 
 ## Step 5: Initialize the Bridge
 
-Copy bridge templates from the plugin into the cloned repo:
+Copy bridge templates from the plugin into the cloned repo. Use the
+platform-specific template directory (`.gitea/` or `.github/`):
 
 ```bash
-# Workflows
+# Workflows — copy from the matching platform template
 mkdir -p "$WORKFLOW_DIR"
-cp -r "$PLUGIN_ROOT/templates/bridge/.gitea/workflows/"* "$WORKFLOW_DIR/" 2>/dev/null || true
+if [[ "$PLATFORM" == "gitea" ]]; then
+  cp -r "$PLUGIN_ROOT/templates/bridge/.gitea/workflows/"* "$WORKFLOW_DIR/"
+else
+  cp -r "$PLUGIN_ROOT/templates/bridge/.github/workflows/"* "$WORKFLOW_DIR/"
+fi
 
-# Issue templates (Gitea uses .gitea/, GitHub uses .github/)
+# Issue templates
 TEMPLATE_DIR=$(dirname "$WORKFLOW_DIR")/ISSUE_TEMPLATE
 mkdir -p "$TEMPLATE_DIR"
-cp -r "$PLUGIN_ROOT/templates/bridge/.gitea/ISSUE_TEMPLATE/"* "$TEMPLATE_DIR/"
+if [[ "$PLATFORM" == "gitea" ]]; then
+  cp -r "$PLUGIN_ROOT/templates/bridge/.gitea/ISSUE_TEMPLATE/"* "$TEMPLATE_DIR/"
+else
+  cp -r "$PLUGIN_ROOT/templates/bridge/.github/ISSUE_TEMPLATE/"* "$TEMPLATE_DIR/"
+fi
 
 # Lib scripts
 mkdir -p lib
@@ -106,47 +115,45 @@ cp "$PLUGIN_ROOT/templates/bridge/CLAUDE.md" ./CLAUDE.md
 echo ".seamonster/" >> .gitignore
 ```
 
-If the platform is GitHub, rename any `.gitea/` paths in the workflow YAML files to use `github` event syntax. **Note: GitHub workflow templates are not yet available — warn the user that Gitea workflows were copied and may need manual adaptation for GitHub Actions.**
-
 ## Step 6: Create Org-Level Labels
 
 Create the scoped labels that drive the issue state machine.
 
-**For Gitea** (org-level labels):
+**For Gitea** (org-level labels — source `./lib/gitea-api.sh` or `./lib/git-api.sh`):
 ```bash
 # State labels
-gitea_post "/orgs/$ORG/labels" '{"name":"approved","color":"#0e8a16","description":"Proposal approved — ready for planning"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"build-ready","color":"#1d76db","description":"Ready for Builder"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"deploy-ready","color":"#5319e7","description":"Ready for Deployer"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"needs-input","color":"#e4e669","description":"Agent blocked — Captain decision needed"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"live","color":"#0e8a16","description":"Deployed to production"}'
+sm_post "/orgs/$ORG/labels" '{"name":"approved","color":"#0e8a16","description":"Proposal approved — ready for planning"}'
+sm_post "/orgs/$ORG/labels" '{"name":"build-ready","color":"#1d76db","description":"Ready for Builder"}'
+sm_post "/orgs/$ORG/labels" '{"name":"deploy-ready","color":"#5319e7","description":"Ready for Deployer"}'
+sm_post "/orgs/$ORG/labels" '{"name":"needs-input","color":"#e4e669","description":"Agent blocked — Captain decision needed"}'
+sm_post "/orgs/$ORG/labels" '{"name":"live","color":"#0e8a16","description":"Deployed to production"}'
 
 # Team labels
-gitea_post "/orgs/$ORG/labels" '{"name":"team/scout","color":"#c5def5"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"team/build","color":"#c5def5"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"team/ops","color":"#c5def5"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"team/growth","color":"#c5def5"}'
+sm_post "/orgs/$ORG/labels" '{"name":"team/scout","color":"#c5def5"}'
+sm_post "/orgs/$ORG/labels" '{"name":"team/build","color":"#c5def5"}'
+sm_post "/orgs/$ORG/labels" '{"name":"team/ops","color":"#c5def5"}'
+sm_post "/orgs/$ORG/labels" '{"name":"team/growth","color":"#c5def5"}'
 
 # Priority labels
-gitea_post "/orgs/$ORG/labels" '{"name":"priority/p0","color":"#b60205","description":"Critical"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"priority/p1","color":"#d93f0b","description":"High"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"priority/p2","color":"#fbca04","description":"Normal"}'
+sm_post "/orgs/$ORG/labels" '{"name":"priority/p0","color":"#b60205","description":"Critical"}'
+sm_post "/orgs/$ORG/labels" '{"name":"priority/p1","color":"#d93f0b","description":"High"}'
+sm_post "/orgs/$ORG/labels" '{"name":"priority/p2","color":"#fbca04","description":"Normal"}'
 
 # Size labels
-gitea_post "/orgs/$ORG/labels" '{"name":"size/small","color":"#c2e0c6"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"size/medium","color":"#c2e0c6"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"size/large","color":"#c2e0c6"}'
+sm_post "/orgs/$ORG/labels" '{"name":"size/small","color":"#c2e0c6"}'
+sm_post "/orgs/$ORG/labels" '{"name":"size/medium","color":"#c2e0c6"}'
+sm_post "/orgs/$ORG/labels" '{"name":"size/large","color":"#c2e0c6"}'
 
 # Status labels
-gitea_post "/orgs/$ORG/labels" '{"name":"status/blocked","color":"#e4e669"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"status/waiting","color":"#e4e669"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"status/active","color":"#0e8a16"}'
+sm_post "/orgs/$ORG/labels" '{"name":"status/blocked","color":"#e4e669"}'
+sm_post "/orgs/$ORG/labels" '{"name":"status/waiting","color":"#e4e669"}'
+sm_post "/orgs/$ORG/labels" '{"name":"status/active","color":"#0e8a16"}'
 
 # Type labels
-gitea_post "/orgs/$ORG/labels" '{"name":"type/proposal","color":"#d4c5f9"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"type/feature","color":"#d4c5f9"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"type/bug","color":"#d4c5f9"}'
-gitea_post "/orgs/$ORG/labels" '{"name":"type/deploy","color":"#d4c5f9"}'
+sm_post "/orgs/$ORG/labels" '{"name":"type/proposal","color":"#d4c5f9"}'
+sm_post "/orgs/$ORG/labels" '{"name":"type/feature","color":"#d4c5f9"}'
+sm_post "/orgs/$ORG/labels" '{"name":"type/bug","color":"#d4c5f9"}'
+sm_post "/orgs/$ORG/labels" '{"name":"type/deploy","color":"#d4c5f9"}'
 ```
 
 **For GitHub** (per-repo labels — GitHub doesn't support org-level labels):

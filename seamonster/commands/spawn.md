@@ -36,9 +36,12 @@ Orchestrator's routing — use when you know exactly which agent you need.
 Parse the command arguments. If the crew member name is not recognized, list
 available crew members. If the project does not exist, report the error.
 
-Verify the repo exists using the appropriate API:
-- **Gitea:** `source ./lib/gitea-api.sh && gitea_get "/repos/${SEAMONSTER_ORG}/${PROJECT}"`
-- **GitHub:** `gh repo view ${SEAMONSTER_ORG}/${PROJECT}`
+Verify the repo exists:
+
+```bash
+source ./lib/git-api.sh
+sm_get "/repos/${SEAMONSTER_ORG}/${PROJECT}" > /dev/null
+```
 
 ### Step 2: Map to Agent
 

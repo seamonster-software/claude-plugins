@@ -12,30 +12,27 @@ health, milestone progress, recent deployments, and active builds.
 
 ### Step 1: Gather Project Data
 
-Gather project data using the appropriate API:
-
-**Gitea:**
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 ORG="${SEAMONSTER_ORG:-seamonster}"
-repos=$(gitea_get "/orgs/${ORG}/repos" | jq -r '.[] | select(.name != "bridge") | .name')
+repos=$(sm_list_repos "$ORG" | jq -r '.[] | select(.name != "bridge") | .name')
 
 for repo in $repos; do
   # Get milestones with completion percentages
-  milestones=$(gitea_get "/repos/${ORG}/${repo}/milestones?state=all&limit=50")
+  milestones=$(sm_get "/repos/${ORG}/${repo}/milestones?state=all&limit=50")
 
   # Get open issue count
-  repo_info=$(gitea_get "/repos/${ORG}/${repo}")
+  repo_info=$(sm_get "/repos/${ORG}/${repo}")
   open_issues=$(echo "$repo_info" | jq '.open_issues_count')
 
   # Get recent closed issues (last 7 days for deploy/activity detection)
-  recent_closed=$(gitea_get "/repos/${ORG}/${repo}/issues?state=closed&limit=10&type=issues")
+  recent_closed=$(sm_list_issues "$ORG" "$repo" "closed")
 
   # Get open PRs
-  open_prs=$(gitea_get "/repos/${ORG}/${repo}/pulls?state=open&limit=10")
+  open_prs=$(sm_list_prs "$ORG" "$repo")
 
   # Get recent merged PRs
-  merged_prs=$(gitea_get "/repos/${ORG}/${repo}/pulls?state=closed&limit=10" | \
+  merged_prs=$(sm_list_prs "$ORG" "$repo" "closed" | \
     jq '[.[] | select(.merged != null)]')
 done
 ```

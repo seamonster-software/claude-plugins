@@ -27,20 +27,20 @@ Every build task follows this flow. No exceptions.
 
 ### 1. Understand the Issue
 
-Read the Gitea issue thoroughly. Check for:
+Read the issue thoroughly. Check for:
 - Acceptance criteria
 - Architecture decisions (comments from Architect)
 - Dependencies on other issues
 - Related milestones
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 
-issue_json=$(gitea_get_issue "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER")
+issue_json=$(sm_get_issue "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER")
 echo "$issue_json" | jq -r '.title, .body'
 
 # Check for comments with decisions or architecture guidance
-gitea_get "/repos/${SEAMONSTER_ORG}/${REPO}/issues/${ISSUE_NUMBER}/comments" | \
+sm_get "/repos/${SEAMONSTER_ORG}/${REPO}/issues/${ISSUE_NUMBER}/comments" | \
   jq -r '.[] | "[\(.user.login)] \(.body)"'
 ```
 
@@ -59,9 +59,9 @@ git checkout -b "issue-${ISSUE_NUMBER}-${SHORT_DESC}"
 Post a comment when you start work, and at meaningful checkpoints:
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 
-gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Builder** starting work on this issue.
 
 **Plan:**
@@ -99,9 +99,9 @@ When the work is complete, push and create a PR:
 ```bash
 git push -u origin "issue-${ISSUE_NUMBER}-${SHORT_DESC}"
 
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 
-gitea_create_pr "$SEAMONSTER_ORG" "$REPO" \
+sm_create_pr "$SEAMONSTER_ORG" "$REPO" \
   "feat: ${PR_TITLE} (#${ISSUE_NUMBER})" \
   "## Summary
 
@@ -127,9 +127,9 @@ Implements #${ISSUE_NUMBER}.
 Post a completion comment and update labels:
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 
-gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Builder** — build complete.
 
 PR: #${PR_NUMBER}
@@ -175,17 +175,17 @@ each on its own branch, merging to the issue branch when complete.
 
 If you hit a question that requires a design decision or Captain input:
 
-1. Post the question on the Gitea issue with options and trade-offs
+1. Post the question on the issue with options and trade-offs
 2. Add the `needs-input` label
 3. Send an ntfy decision notification
 4. Check for other unblocked work to continue on
 5. If nothing else to do, exit cleanly — you'll be re-triggered when input arrives
 
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 source ./lib/notify.sh
 
-gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Builder** — blocked, need a decision.
 
 **Question:** Should the API use REST or GraphQL?
@@ -203,8 +203,7 @@ gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
 **Recommendation:** REST — simpler for the current scope, can add GraphQL later."
 
 # Add needs-input label
-label_id=$(gitea_get_label_id "$SEAMONSTER_ORG" "$REPO" "needs-input")
-gitea_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" "[$label_id]"
+sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" '["needs-input"]'
 
 # Notify Captain
 ntfy_decision "Builder" "$REPO" "$ISSUE_NUMBER" \
@@ -217,7 +216,7 @@ ntfy_decision "Builder" "$REPO" "$ISSUE_NUMBER" \
 
 1. Always branch from main. Never commit directly to main.
 2. Every commit references the issue number.
-3. Post progress comments — the Gitea issue is the audit trail.
+3. Post progress comments — the issue is the audit trail.
 4. Follow the project's CLAUDE.md conventions. Read it first.
 5. Never hardcode secrets or credentials.
 6. Never skip error handling.

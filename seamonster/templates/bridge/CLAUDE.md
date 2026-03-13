@@ -131,20 +131,25 @@ Available to all workflows and agents via repository secrets:
 
 | Variable | Description |
 |---|---|
-| `GITEA_URL` | Base URL of the git server |
-| `GITEA_TOKEN` | API token for git operations |
+| `GITEA_URL` | Gitea server URL (Sovereign tier) |
+| `GITEA_TOKEN` | Gitea API token (Sovereign tier) |
+| `GITHUB_TOKEN` | GitHub API token (automatic in GitHub Actions) |
 | `NTFY_URL` | Base URL of the ntfy server |
 | `NTFY_TOKEN` | Auth token for ntfy (optional) |
 | `SEAMONSTER_ORG` | Git organization name |
 | `SEAMONSTER_DOMAIN` | Domain for deployed services |
+| `SM_PLATFORM` | Auto-detected: "gitea" or "github" (set by git-api.sh) |
 
 ## Lib Scripts
 
-Source these in any script or workflow step (relative to repo root):
+Source `git-api.sh` for platform-agnostic git operations. It auto-detects the
+platform (Gitea or GitHub) and provides unified `sm_*` functions:
 
 ```bash
-source "./lib/gitea-api.sh"        # Gitea API wrapper (Sovereign tier)
-source "./lib/github-api.sh"       # GitHub API wrapper (Lite/Solo tiers)
+source "./lib/git-api.sh"          # Unified git API — use sm_* functions
 source "./lib/notify.sh"           # ntfy notification helpers
 source "./lib/claude-runner.sh"    # Claude invocation wrapper
 ```
+
+Platform-specific backends (`gitea-api.sh`, `github-api.sh`) are sourced
+automatically by `git-api.sh` — agents and commands never source them directly.

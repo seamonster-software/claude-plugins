@@ -1,6 +1,6 @@
 ---
 name: "crew-status"
-description: "Show status of all active work across Gitea — issues by state, recent activity, blocked items."
+description: "Show status of all active work — issues by state, recent activity, blocked items."
 ---
 
 # /crew-status
@@ -13,24 +13,16 @@ Query all repos in the org and present a summary grouped by state.
 
 ### Step 1: Gather Data
 
-Gather all open issues and PRs across the org using the appropriate API:
+Gather all open issues and PRs across the org:
 
-**Gitea:**
 ```bash
-source ./lib/gitea-api.sh
+source ./lib/git-api.sh
 ORG="${SEAMONSTER_ORG:-seamonster}"
-repos=$(gitea_get "/orgs/${ORG}/repos" | jq -r '.[].name')
+repos=$(sm_list_repos "$ORG" | jq -r '.[].name')
 for repo in $repos; do
-  gitea_get "/repos/${ORG}/${repo}/issues?state=open&limit=50&type=issues"
-  gitea_get "/repos/${ORG}/${repo}/pulls?state=open&limit=50"
+  sm_list_issues "$ORG" "$repo"
+  sm_list_prs "$ORG" "$repo"
 done
-```
-
-**GitHub:**
-```bash
-ORG="${SEAMONSTER_ORG}"
-gh search issues --owner "$ORG" --state open --json repository,number,title,labels,updatedAt
-gh search prs --owner "$ORG" --state open --json repository,number,title,updatedAt
 ```
 
 ### Step 2: Present Summary

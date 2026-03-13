@@ -49,9 +49,10 @@ seamonster-software/claude-plugins/
 │   ├── hooks/
 │   │   └── session-log.js
 │   ├── lib/                            # Shell helpers (copied into user repos by init)
+│   │   ├── git-api.sh                 # Unified API — agents source this, not platform-specific files
 │   │   ├── claude-runner.sh
-│   │   ├── gitea-api.sh
-│   │   ├── github-api.sh
+│   │   ├── gitea-api.sh               # Gitea backend (sourced by git-api.sh)
+│   │   ├── github-api.sh              # GitHub backend (sourced by git-api.sh)
 │   │   └── notify.sh
 │   └── templates/                      # Repo templates (copied by init)
 │       ├── bridge/                     # Bridge repo template
@@ -70,12 +71,14 @@ seamonster-software/claude-plugins/
 ## Conventions
 
 - Shell scripts: `set -euo pipefail`, idempotent, color output
-- Agent prompts reference `lib/` scripts for Gitea/ntfy integration
+- Agent prompts use `source ./lib/git-api.sh` for platform-agnostic git operations
+- `git-api.sh` auto-detects platform (GITEA_URL → Gitea, GITHUB_TOKEN → GitHub)
+- All `sm_*` functions normalize platform differences (labels use names, pagination auto-converted)
+- `gitea-api.sh` and `github-api.sh` are backends — agents/commands never source them directly
+- Workflow templates remain platform-specific (`.gitea/workflows/` and `.github/workflows/`)
 - All agent actions post comments on git issues (audit trail)
 - Agents never stall silently — escalate via ntfy
 - Reviewer is always read-only (no Edit/Write tools)
 - Agent descriptions must include specific trigger patterns, not vague summaries
 - Workflows use repo-relative paths (`./lib/`) — no SEAMONSTER_ROOT env var
 - Templates exist for both Gitea Actions and GitHub Actions
-- `claude-runner.sh` checks GITEA_URL / GITHUB_TOKEN env vars to pick the right API wrapper
-- Git API functions are NOT unified yet — agents call `gitea_*` or `github_*` directly (item 9 backlog)
