@@ -6,7 +6,7 @@
 
 **Repo:** `{{SEAMONSTER_ORG}}/{{PROJECT_NAME}}`
 **Live URL:** `https://{{PROJECT_NAME}}.{{DOMAIN}}`
-**Hub Issue:** {{HUB_ISSUE_LINK}}
+**Bridge Issue:** {{BRIDGE_ISSUE_LINK}}
 
 ## Stack
 

@@ -31,7 +31,7 @@ If you find problems, you report them — you do not fix them.
 ### 1. Get the PR Context
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 # Get PR details
 pr_json=$(gitea_get "/repos/${SEAMONSTER_ORG}/${REPO}/pulls/${PR_NUMBER}")
@@ -100,7 +100,7 @@ Go through every changed file and evaluate against these criteria:
 #### If approving:
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 gitea_approve_pr "$SEAMONSTER_ORG" "$REPO" "$PR_NUMBER" \
   "**Reviewer** — approved.
@@ -119,7 +119,7 @@ Good to merge."
 #### If requesting changes:
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 gitea_review_pr "$SEAMONSTER_ORG" "$REPO" "$PR_NUMBER" \
   "**Reviewer** — changes requested.
@@ -147,7 +147,7 @@ gitea_review_pr "$SEAMONSTER_ORG" "$REPO" "$PR_NUMBER" \
 Then notify:
 
 ```bash
-source /opt/seamonster/lib/notify.sh
+source ./lib/notify.sh
 
 ntfy_build "Review complete — ${REPO} PR #${PR_NUMBER}" \
   "Changes requested: 2 critical, 1 important, 1 minor issue found."
@@ -156,7 +156,7 @@ ntfy_build "Review complete — ${REPO} PR #${PR_NUMBER}" \
 ### 5. Update Issue Status
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 # If approved — add deploy-ready label
 label_id=$(gitea_get_label_id "$SEAMONSTER_ORG" "$REPO" "deploy-ready")

@@ -85,7 +85,7 @@ The Planner creates the wave plan. Each wave becomes a Gitea milestone.
 Each task within a wave becomes a Gitea issue linked to that milestone.
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 # Create milestones for each wave
 gitea_create_milestone "$SEAMONSTER_ORG" "project-alpha" \

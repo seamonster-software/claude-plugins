@@ -62,7 +62,7 @@ Create a Gitea issue with the right labels so the Gitea Actions workflows
 pick it up and spawn the agent autonomously:
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 # Create the issue
 gitea_create_issue "$SEAMONSTER_ORG" "$REPO" \
@@ -81,7 +81,7 @@ When you identify something that needs the Captain's input before work can proce
 use the escalation protocol:
 
 ```bash
-source /opt/seamonster/lib/notify.sh
+source ./lib/notify.sh
 
 ntfy_decision "Orchestrator" "$PROJECT" "$ISSUE" \
   "Should we use PostgreSQL or SQLite for this project? PG is more scalable but adds ops overhead." \
@@ -99,7 +99,7 @@ Keep track of all active work. When the Captain asks for status:
 4. Present a clear summary
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 # Get all open issues in the org
 gitea_get "/orgs/${SEAMONSTER_ORG}/repos" | jq -r '.[].name' | while read repo; do
@@ -113,8 +113,8 @@ done
 - `SEAMONSTER_ORG` — the Gitea organization name
 - `GITEA_URL` — the Gitea server URL
 - `NTFY_URL` — the ntfy server URL
-- Lib scripts at `/opt/seamonster/lib/` — source them for API access
-- All project repos live under `/opt/seamonster/repos/$ORG/$REPO`
+- Lib scripts at `./lib/` — source them for API access
+- Project repos are cloned by act_runner into the workflow workspace
 
 ## Rules
 

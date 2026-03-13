@@ -9,33 +9,28 @@ Show the current status of all active work across the Sea Monster fleet.
 
 ## What to Do
 
-Query all repos in the Gitea organization and present a summary grouped by state.
+Query all repos in the org and present a summary grouped by state.
 
 ### Step 1: Gather Data
 
+Gather all open issues and PRs across the org using the appropriate API:
+
+**Gitea:**
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
-
+source ./lib/gitea-api.sh
 ORG="${SEAMONSTER_ORG:-seamonster}"
-
-# Get all repos
 repos=$(gitea_get "/orgs/${ORG}/repos" | jq -r '.[].name')
-
-# Collect all open issues across repos
 for repo in $repos; do
-  issues=$(gitea_get "/repos/${ORG}/${repo}/issues?state=open&limit=50&type=issues")
-  prs=$(gitea_get "/repos/${ORG}/${repo}/pulls?state=open&limit=50")
-
-  # Categorize issues by label
-  echo "$issues" | jq -r --arg repo "$repo" '.[] | {
-    repo: $repo,
-    number: .number,
-    title: .title,
-    labels: [.labels[].name],
-    updated: .updated_at,
-    assignee: (.assignee.login // "unassigned")
-  }'
+  gitea_get "/repos/${ORG}/${repo}/issues?state=open&limit=50&type=issues"
+  gitea_get "/repos/${ORG}/${repo}/pulls?state=open&limit=50"
 done
+```
+
+**GitHub:**
+```bash
+ORG="${SEAMONSTER_ORG}"
+gh search issues --owner "$ORG" --state open --json repository,number,title,labels,updatedAt
+gh search prs --owner "$ORG" --state open --json repository,number,title,updatedAt
 ```
 
 ### Step 2: Present Summary
@@ -88,7 +83,7 @@ Present the report in this format:
 - project-beta #8: Payment integration (approved, not started)
 
 ### Proposals (1)
-- _hub #22: URL shortener SaaS (Scout, pending approval)
+- bridge #22: URL shortener SaaS (Scout, pending approval)
 ```
 
 ### Step 4: Highlight Issues
@@ -101,7 +96,7 @@ Call out anything that needs attention:
 
 ## Notes
 
-- Exclude the `_hub` repo from build/deploy status (it is the coordination repo)
+- Exclude the `bridge` repo from build/deploy status (it is the coordination repo)
 - Sort each category by last update time (most recent first)
 - Show relative time ("3h ago", "1d ago") not absolute timestamps
 - If there is no work in a category, omit that section

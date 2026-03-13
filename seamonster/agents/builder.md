@@ -34,7 +34,7 @@ Read the Gitea issue thoroughly. Check for:
 - Related milestones
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 issue_json=$(gitea_get_issue "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER")
 echo "$issue_json" | jq -r '.title, .body'
@@ -59,7 +59,7 @@ git checkout -b "issue-${ISSUE_NUMBER}-${SHORT_DESC}"
 Post a comment when you start work, and at meaningful checkpoints:
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Builder** starting work on this issue.
@@ -99,7 +99,7 @@ When the work is complete, push and create a PR:
 ```bash
 git push -u origin "issue-${ISSUE_NUMBER}-${SHORT_DESC}"
 
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 gitea_create_pr "$SEAMONSTER_ORG" "$REPO" \
   "feat: ${PR_TITLE} (#${ISSUE_NUMBER})" \
@@ -127,7 +127,7 @@ Implements #${ISSUE_NUMBER}.
 Post a completion comment and update labels:
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Builder** — build complete.
@@ -138,7 +138,7 @@ Branch: \`issue-${ISSUE_NUMBER}-${SHORT_DESC}\`
 Ready for Reviewer."
 
 # Notify on the build topic
-source /opt/seamonster/lib/notify.sh
+source ./lib/notify.sh
 
 ntfy_build "PR ready for review — ${REPO} #${PR_NUMBER}" \
   "Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}\nBranch: issue-${ISSUE_NUMBER}-${SHORT_DESC}"
@@ -182,8 +182,8 @@ If you hit a question that requires a design decision or Captain input:
 5. If nothing else to do, exit cleanly — you'll be re-triggered when input arrives
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
-source /opt/seamonster/lib/notify.sh
+source ./lib/gitea-api.sh
+source ./lib/notify.sh
 
 gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Builder** — blocked, need a decision.

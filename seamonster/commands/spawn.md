@@ -27,26 +27,18 @@ Orchestrator's routing — use when you know exactly which agent you need.
   - `proposal-writer`
   - `analyst`
 
-- `project` — the Gitea repo name (e.g., `project-alpha`, `_hub`)
+- `project` — the repo name (e.g., `project-alpha`, `bridge`)
 
 ## What to Do
 
 ### Step 1: Validate the Arguments
 
 Parse the command arguments. If the crew member name is not recognized, list
-available crew members. If the project does not exist in Gitea, report the error.
+available crew members. If the project does not exist, report the error.
 
-```bash
-source /opt/seamonster/lib/gitea-api.sh
-
-# Verify the repo exists
-if ! gitea_get "/repos/${SEAMONSTER_ORG}/${PROJECT}" > /dev/null 2>&1; then
-  echo "Error: repo '${PROJECT}' not found in org '${SEAMONSTER_ORG}'"
-  echo "Available repos:"
-  gitea_get "/orgs/${SEAMONSTER_ORG}/repos" | jq -r '.[].name' | sort
-  exit 1
-fi
-```
+Verify the repo exists using the appropriate API:
+- **Gitea:** `source ./lib/gitea-api.sh && gitea_get "/repos/${SEAMONSTER_ORG}/${PROJECT}"`
+- **GitHub:** `gh repo view ${SEAMONSTER_ORG}/${PROJECT}`
 
 ### Step 2: Map to Agent
 
@@ -109,5 +101,5 @@ Branch: issue-47-auth-module
 - If the project has no matching work (e.g., no build-ready issues for
   Builder), the agent reports this and exits.
 - Only core crew members (Builder, Reviewer, Deployer) are available
-  as interactive subagents. Other crew members are dispatched via Gitea
+  as interactive subagents. Other crew members are dispatched via git
   issues for autonomous execution.

@@ -12,20 +12,22 @@ needed next.
 
 ### Step 1: Gather All Open Issues
 
+Gather all open issues across the org using the appropriate API:
+
+**Gitea:**
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
-
+source ./lib/gitea-api.sh
 ORG="${SEAMONSTER_ORG:-seamonster}"
-
 repos=$(gitea_get "/orgs/${ORG}/repos" | jq -r '.[].name')
-
-all_issues="[]"
 for repo in $repos; do
-  issues=$(gitea_get "/repos/${ORG}/${repo}/issues?state=open&limit=50&type=issues")
-  # Add repo name to each issue
-  tagged=$(echo "$issues" | jq --arg repo "$repo" '[.[] | . + {repo: $repo}]')
-  all_issues=$(echo "$all_issues $tagged" | jq -s 'add')
+  gitea_get "/repos/${ORG}/${repo}/issues?state=open&limit=50&type=issues"
 done
+```
+
+**GitHub:**
+```bash
+ORG="${SEAMONSTER_ORG}"
+gh search issues --owner "$ORG" --state open --json repository,number,title,labels,updatedAt
 ```
 
 ### Step 2: Group by Category
@@ -73,7 +75,7 @@ Any open issues that do not match the above categories. May need triage.
   project-gamma #3   Landing page                      Builder    4h active
 
 ### Proposals Pending (1) — review when ready
-  _hub          #22  URL shortener SaaS                Scout      submitted 2d ago
+  bridge        #22  URL shortener SaaS                Scout      submitted 2d ago
 
 ### Deploy Ready (1) — ship it
   project-gamma #2   Static site build                 reviewed     ready 6h

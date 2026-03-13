@@ -1,6 +1,6 @@
-# Sea Monster Hub — Coordination Repo
+# Sea Monster Bridge — Coordination Repo
 
-This is the `_hub` repo — the central coordination point for the Sea Monster crew. All cross-project orchestration, proposals, and crew coordination flows through here.
+This is the **bridge** — the Captain's command center. All cross-project orchestration, proposals, and crew coordination flows through here.
 
 ## The Crew
 

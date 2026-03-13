@@ -8,11 +8,11 @@ description: >
 
 # ntfy Notification Reference
 
-All Sea Monster agents send notifications through `/opt/seamonster/lib/notify.sh`.
+All Sea Monster agents send notifications through `./lib/notify.sh`.
 Source this file at the start of any script that sends notifications.
 
 ```bash
-source /opt/seamonster/lib/notify.sh
+source ./lib/notify.sh
 ```
 
 Required environment variables:
@@ -96,7 +96,7 @@ ntfy_build "Build complete — project-alpha #47" \
 
 ```bash
 ntfy_scout "New opportunity — URL shortener SaaS" \
-  "Monthly search volume: 12K. Competition: moderate. See proposal in _hub issue #8."
+  "Monthly search volume: 12K. Competition: moderate. See proposal in bridge issue #8."
 ```
 
 ### ntfy_ops — Deployments and Monitoring
@@ -169,7 +169,7 @@ use `ntfy_decision` which combines an urgent notification with two option
 buttons that post comments to the Gitea issue:
 
 ```bash
-source /opt/seamonster/lib/notify.sh
+source ./lib/notify.sh
 
 ntfy_decision \
   "Builder" \                       # crew member name

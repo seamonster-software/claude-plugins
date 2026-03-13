@@ -30,7 +30,7 @@ pipelines, Traefik routing, systemd services, and release management.
 Only deploy from merged PRs. Never deploy from branches.
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 pr_json=$(gitea_get "/repos/${SEAMONSTER_ORG}/${REPO}/pulls/${PR_NUMBER}")
 merged=$(echo "$pr_json" | jq -r '.merged')
@@ -44,7 +44,7 @@ fi
 ### 2. Pull Latest Main
 
 ```bash
-cd "/opt/seamonster/repos/${SEAMONSTER_ORG}/${REPO}"
+# Workflow already checks out the repo via actions/checkout
 git checkout main
 git pull origin main
 ```
@@ -72,7 +72,7 @@ For web services, create a Traefik dynamic configuration file so the service
 is reachable at `{project}.{domain}`:
 
 ```yaml
-# /opt/seamonster/system/traefik/dynamic/{repo}.yml
+# Sovereign tier: /opt/seamonster/system/traefik/dynamic/{repo}.yml
 http:
   routers:
     {repo}:
@@ -93,7 +93,8 @@ http:
 Write this config via:
 
 ```bash
-TRAEFIK_DYNAMIC="/opt/seamonster/system/traefik/dynamic"
+# Sovereign tier path — adjust per deployment
+TRAEFIK_DYNAMIC="${SEAMONSTER_TRAEFIK_DYNAMIC:-/opt/seamonster/system/traefik/dynamic}"
 mkdir -p "$TRAEFIK_DYNAMIC"
 
 cat > "${TRAEFIK_DYNAMIC}/${REPO}.yml" << YAML
@@ -133,11 +134,11 @@ After=network.target
 Type=simple
 User=seamonster
 Group=seamonster
-WorkingDirectory=/opt/seamonster/repos/${SEAMONSTER_ORG}/${REPO}
+WorkingDirectory=${SEAMONSTER_REPOS:-/opt/seamonster/repos}/${SEAMONSTER_ORG}/${REPO}
 ExecStart=${START_COMMAND}
 Restart=on-failure
 RestartSec=5
-EnvironmentFile=/opt/seamonster/env/${REPO}.env
+EnvironmentFile=${SEAMONSTER_ENV:-/opt/seamonster/env}/${REPO}.env
 
 [Install]
 WantedBy=multi-user.target
@@ -171,8 +172,8 @@ fi
 ### 7. Post Deploy Status
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
-source /opt/seamonster/lib/notify.sh
+source ./lib/gitea-api.sh
+source ./lib/notify.sh
 
 # Comment on the issue
 gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
@@ -200,7 +201,6 @@ If a deployment fails or the health check does not pass:
 sudo systemctl stop "seamonster-${REPO}"
 
 # Revert to previous commit
-cd "/opt/seamonster/repos/${SEAMONSTER_ORG}/${REPO}"
 git log --oneline -5  # Find the previous good commit
 PREV_COMMIT=$(git log --format='%H' -2 | tail -1)
 git checkout "$PREV_COMMIT"
@@ -211,7 +211,7 @@ git checkout "$PREV_COMMIT"
 sudo systemctl start "seamonster-${REPO}"
 
 # Notify about rollback
-source /opt/seamonster/lib/notify.sh
+source ./lib/notify.sh
 ntfy_urgent "ROLLBACK — ${REPO}" \
   "Deployment failed. Rolled back to ${PREV_COMMIT}.\nCheck logs: journalctl -u seamonster-${REPO}"
 ```
@@ -222,7 +222,7 @@ For static sites (HTML/CSS/JS, Hugo, Next.js static export), deploy to a
 directory served by Traefik's file server or push to CDN:
 
 ```bash
-BUILD_DIR="/opt/seamonster/www/${REPO}"
+BUILD_DIR="${SEAMONSTER_WWW:-/opt/seamonster/www}/${REPO}"
 mkdir -p "$BUILD_DIR"
 
 # Copy built static files
@@ -255,7 +255,7 @@ YAML
 Never commit secrets. Manage environment files:
 
 ```bash
-ENV_DIR="/opt/seamonster/env"
+ENV_DIR="${SEAMONSTER_ENV:-/opt/seamonster/env}"
 mkdir -p "$ENV_DIR"
 chmod 700 "$ENV_DIR"
 
@@ -291,7 +291,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Deploy
         run: |
-          source /opt/seamonster/lib/claude-runner.sh
+          source ./lib/claude-runner.sh
           run_agent_for_issue "Deployer" \
             "${{ secrets.SEAMONSTER_ORG }}" \
             "${{ github.event.repository.name }}" \
@@ -313,8 +313,8 @@ If deployment fails and you cannot resolve it:
 4. Notify via ntfy urgent topic
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
-source /opt/seamonster/lib/notify.sh
+source ./lib/gitea-api.sh
+source ./lib/notify.sh
 
 gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Deployer** — deployment failed. Need help.

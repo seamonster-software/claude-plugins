@@ -12,12 +12,13 @@ health, milestone progress, recent deployments, and active builds.
 
 ### Step 1: Gather Project Data
 
+Gather project data using the appropriate API:
+
+**Gitea:**
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
-
+source ./lib/gitea-api.sh
 ORG="${SEAMONSTER_ORG:-seamonster}"
-
-repos=$(gitea_get "/orgs/${ORG}/repos" | jq -r '.[] | select(.name != "_hub") | .name')
+repos=$(gitea_get "/orgs/${ORG}/repos" | jq -r '.[] | select(.name != "bridge") | .name')
 
 for repo in $repos; do
   # Get milestones with completion percentages
@@ -120,7 +121,7 @@ echo "    ${milestone_title}  ${bar} ${pct}% (${closed}/${total} closed)"
 
 ## Notes
 
-- Exclude the `_hub` repo from the project list (it is the coordination repo,
+- Exclude the `bridge` repo from the project list (it is the coordination repo,
   not a project)
 - Sort projects by phase: Unhealthy first, then Building, Reviewing,
   Deploying, Planning, Live, Idle

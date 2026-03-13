@@ -13,8 +13,7 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
-const SEAMONSTER_ROOT = process.env.SEAMONSTER_ROOT || "/opt/seamonster";
-const LOG_DIR = process.env.SEAMONSTER_LOG_DIR || path.join(SEAMONSTER_ROOT, "logs", "sessions");
+const LOG_DIR = process.env.SEAMONSTER_LOG_DIR || path.join(process.cwd(), ".seamonster", "logs", "sessions");
 const GITEA_URL = process.env.GITEA_URL;
 const GITEA_TOKEN = process.env.GITEA_TOKEN;
 const SEAMONSTER_ORG = process.env.SEAMONSTER_ORG || "seamonster";
@@ -80,7 +79,7 @@ function detectIssue(transcript, cwd) {
 
 /**
  * Extract repo name from the working directory path.
- * Expects: /opt/seamonster/repos/{org}/{repo}
+ * Detects repo from git remote or directory name
  */
 function detectRepo(cwd) {
   if (process.env.REPO) return process.env.REPO;

@@ -8,11 +8,11 @@ description: >
 
 # Gitea Workflow Reference
 
-All Sea Monster agents interact with Gitea through `/opt/seamonster/lib/gitea-api.sh`.
+All Sea Monster agents interact with Gitea through `./lib/gitea-api.sh`.
 Source this file at the start of any script that touches Gitea.
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 ```
 
 Required environment variables (set by the runner):

@@ -83,7 +83,7 @@ The Captain has to do all the thinking.
 ### Step 1: Post the Question on Gitea
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 gitea_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**${CREW_NAME}** — blocked, need a decision.
@@ -116,7 +116,7 @@ gitea_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
 ### Step 3: Send ntfy Notification
 
 ```bash
-source /opt/seamonster/lib/notify.sh
+source ./lib/notify.sh
 
 ntfy_decision "$CREW_NAME" "$REPO" "$ISSUE_NUMBER" \
   "Sessions: in-memory (simpler, sessions lost on restart) or Redis (persistent, adds dependency)?" \
@@ -129,7 +129,7 @@ ntfy_decision "$CREW_NAME" "$REPO" "$ISSUE_NUMBER" \
 Check for other unblocked work:
 
 ```bash
-source /opt/seamonster/lib/gitea-api.sh
+source ./lib/gitea-api.sh
 
 # Find other issues assigned to this agent's team that are not blocked
 other_issues=$(gitea_get "/repos/${SEAMONSTER_ORG}/${REPO}/issues?state=open&limit=50" | \
