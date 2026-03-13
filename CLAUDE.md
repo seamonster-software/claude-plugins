@@ -12,14 +12,13 @@ Sea Monster is an autonomous AI crew that builds, ships, and markets software 24
 |------|---------|
 | [`seamonster`](https://github.com/seamonster-software/seamonster) | System design (PROJECT.md), docs, website |
 | `claude-plugins` (this repo) | Core plugin — agents, skills, commands, hooks, lib, templates |
-| [`typhon`](https://github.com/seamonster-software/typhon) | Sovereign-tier installer — Gitea + ntfy + Traefik + act_runner on Ubuntu |
 
 ### Key Decisions
 
 - **Distribution:** Free core in public marketplace, paid packs in private marketplace repos
-- **Deployment tiers:** Lite (plugin only, manual triggers), Solo (GitHub + VPS runner), Sovereign (Gitea + VPS via Typhon)
+- **Dual runtime:** Claude Code (interactive, Max subscription) + Pi/Ollama (autonomous, API key)
 - **Bridge:** Coordination repo created by `/seamonster:init` — Captain's single point of contact
-- **Auth:** Claude Pro/Max subscription (not API keys)
+- **Platform:** GitHub only (issues, projects, actions, notifications)
 - **Competitive position:** Sea Monster = business-focused 24/7 autonomy via git state machine
 
 ## Repo Structure
@@ -35,52 +34,41 @@ seamonster-software/claude-plugins/
 │   │   ├── reviewer.md
 │   │   └── deployer.md
 │   ├── skills/                         # Domain knowledge
-│   │   ├── gitea-workflow.md
 │   │   ├── github-workflow.md
-│   │   ├── ntfy-notify.md
 │   │   ├── contract-patterns.md
 │   │   └── escalation-protocol.md
 │   ├── commands/                       # Slash commands
 │   │   ├── init.md                     # /seamonster:init — creates bridge, onboards repos
+│   │   ├── work.md                     # /seamonster:work — poll queue, dispatch agents
 │   │   ├── crew-status.md
 │   │   ├── spawn.md
 │   │   ├── orders.md
 │   │   └── voyage.md
 │   ├── hooks/
-│   │   └── session-log.js
+│   │   └── hooks.json
 │   ├── lib/                            # Shell helpers (copied into user repos by init)
-│   │   ├── git-api.sh                 # Unified API — agents source this, not platform-specific files
-│   │   ├── claude-runner.sh
-│   │   ├── gitea-api.sh               # Gitea backend (sourced by git-api.sh)
+│   │   ├── git-api.sh                  # Unified API — sources github-api.sh, provides sm_* functions
 │   │   ├── github-api.sh              # GitHub backend (sourced by git-api.sh)
-│   │   └── notify.sh
+│   │   └── claude-runner.sh
 │   └── templates/                      # Repo templates (copied by init)
 │       ├── bridge/                     # Bridge repo template
-│       │   ├── .gitea/workflows/       # Gitea Actions (Sovereign tier)
-│       │   ├── .gitea/ISSUE_TEMPLATE/
-│       │   ├── .github/workflows/      # GitHub Actions (Lite/Solo tiers)
+│       │   ├── .github/workflows/
 │       │   ├── .github/ISSUE_TEMPLATE/
 │       │   └── CLAUDE.md
 │       └── project/                    # Project repo template
-│           ├── .gitea/workflows/
 │           ├── .github/workflows/
-│           ├── CLAUDE.md
-│           └── README.md
+│           └── CLAUDE.md
 ```
 
 ## Conventions
 
 - Shell scripts: `set -euo pipefail`, idempotent, color output
-- Agent prompts use `source ./lib/git-api.sh` for platform-agnostic git operations
-- `git-api.sh` auto-detects platform (GITEA_URL → Gitea, GITHUB_TOKEN → GitHub)
-- All `sm_*` functions normalize platform differences (labels use names, pagination auto-converted)
-- `gitea-api.sh` and `github-api.sh` are backends — agents/commands never source them directly
-- Workflow templates remain platform-specific (`.gitea/workflows/` and `.github/workflows/`)
+- Agent prompts use `source ./lib/git-api.sh` for git operations
+- `git-api.sh` sources `github-api.sh` and provides `sm_*` wrapper functions
+- Auth: `GITHUB_TOKEN` env var, or falls back to `gh auth token`
 - All agent actions post comments on git issues (audit trail)
-- Agents never stall silently — escalate via ntfy
+- Agents never stall silently — escalate via GitHub labels + notifications
 - Reviewer is always read-only (no Edit/Write tools)
 - Agent descriptions must include specific trigger patterns, not vague summaries
 - Workflows use repo-relative paths (`./lib/`) — no SEAMONSTER_ROOT env var
-- Templates exist for both Gitea Actions and GitHub Actions
-- `/seamonster:init` uses `tea` CLI (Gitea) or `gh` CLI (GitHub) — no raw curl in commands
-- Tier names are internal — init never asks users about tiers, just detects platform + ntfy preference
+- `/seamonster:init` uses `gh` CLI — no raw curl in commands
