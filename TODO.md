@@ -1,9 +1,8 @@
 # TODO
 
-## Phase 2 — Remaining
+## Next
 
-- [ ] Test Lite tier end-to-end (plugin interactively against GitHub, no runner)
-- [ ] Update Typhon installer for marketplace install path (in typhon repo)
+- [ ] Test Lite tier end-to-end (plugin install + interactive use against GitHub)
 
 ## Agents — 9 remaining core agents
 
@@ -17,14 +16,10 @@
 - [ ] Analyst
 - [ ] Proposal Writer
 
-## Decisions
-
-- [ ] Product name — Sea Monster as both company and product, or separate?
-- [ ] License — AGPLv3 vs MIT
-- [ ] Multi-concurrent agent runs — worktrees vs per-issue branches
-
 ## Improvements
 
 - [ ] Bridge auto-onboard — push workflows to existing repos without per-repo init
-- [ ] Paid packs — Growth, SaaS, Mobile (separate marketplace repos)
-- [ ] seamonster.software website (in seamonster repo)
+
+## System-wide (tracked in seamonster repo)
+
+See seamonster repo PROJECT.md for: product name, license, paid packs, website, deployment tier testing.
