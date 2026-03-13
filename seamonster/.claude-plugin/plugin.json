@@ -24,6 +24,5 @@
     "./commands/orders.md",
     "./commands/voyage.md",
     "./commands/init.md"
-  ],
-  "hooks": "./hooks/hooks.json"
+  ]
 }
