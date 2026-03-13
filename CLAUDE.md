@@ -28,11 +28,13 @@ seamonster-software/claude-plugins/
 ├── .claude-plugin/marketplace.json     # Marketplace manifest
 ├── seamonster/                         # Core plugin
 │   ├── .claude-plugin/plugin.json      # Plugin manifest
-│   ├── agents/                         # 4 core agents (13 planned)
+│   ├── agents/                         # 6 core agents (13 planned)
 │   │   ├── orchestrator.md
 │   │   ├── builder.md
 │   │   ├── reviewer.md
-│   │   └── deployer.md
+│   │   ├── deployer.md
+│   │   ├── analyst.md
+│   │   └── proposal-writer.md
 │   ├── skills/                         # Domain knowledge
 │   │   ├── github-workflow.md
 │   │   ├── contract-patterns.md
