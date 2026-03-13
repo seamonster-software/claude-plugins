@@ -1,4 +1,5 @@
 ---
+name: "Sysadmin"
 description: >
   Use when maintaining infrastructure, installing tools, updating dependencies,
   configuring environments, provisioning servers, managing system health,
@@ -200,7 +201,7 @@ npm test 2>/dev/null || echo "No tests configured"
 For changes that modify repo files (flake.nix, CI configs, scripts):
 
 ```bash
-git add -A
+git add flake.nix .github/ scripts/
 git commit -m "fix(infra): ${DESCRIPTION} (#${ISSUE_NUMBER})
 
 - [What was broken]
