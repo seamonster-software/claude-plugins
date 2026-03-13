@@ -1,0 +1,129 @@
+name: "Escalation: Notify Captain"
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  # When an agent adds 'needs-input' — notify the Captain
+  notify-captain:
+    if: >-
+      github.event_name == 'issues' &&
+      github.event.label.name == 'needs-input'
+    runs-on: self-hosted
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NTFY_URL: ${{ secrets.NTFY_URL }}
+      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+      SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Send ntfy notification
+        run: |
+          source "./lib/github-api.sh"
+          source "./lib/notify.sh"
+
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          REPO="${{ github.event.repository.name }}"
+
+          # Get the last comment on the issue (the agent's question)
+          LAST_COMMENT=$(github_get "/repos/${SEAMONSTER_ORG}/${REPO}/issues/${ISSUE_NUMBER}/comments?per_page=1&direction=desc" | \
+            jq -r '.[0].body // "No comment found"')
+
+          # Truncate for notification body (Captain reads on phone)
+          BODY=$(echo "$LAST_COMMENT" | head -20)
+
+          # Build the view action
+          ISSUE_URL="${{ github.server_url }}/${SEAMONSTER_ORG}/${REPO}/issues/${ISSUE_NUMBER}"
+          VIEW_ACTION="view, View Issue, ${ISSUE_URL}"
+
+          ntfy_send "urgent" \
+            "Input needed — ${REPO} #${ISSUE_NUMBER}: ${ISSUE_TITLE}" \
+            "$BODY" \
+            "urgent" \
+            "question" \
+            "$VIEW_ACTION"
+
+  # When the Captain responds to a 'needs-input' issue — remove label and re-trigger work
+  captain-responded:
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.action == 'created'
+    runs-on: self-hosted
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NTFY_URL: ${{ secrets.NTFY_URL }}
+      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+      SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check if issue has needs-input label and comment is from Captain
+        id: check
+        run: |
+          source "./lib/github-api.sh"
+
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          REPO="${{ github.event.repository.name }}"
+          COMMENTER="${{ github.event.comment.user.login }}"
+
+          # Check if the issue has the needs-input label
+          HAS_LABEL=$(github_get_issue "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" | \
+            jq -r '.labels | map(.name) | if index("needs-input") then "true" else "false" end')
+
+          # Skip if the commenter is a bot (avoid infinite loops)
+          IS_AGENT="false"
+          COMMENTER_TYPE=$(github_get "/users/${COMMENTER}" 2>/dev/null | jq -r '.type // "User"')
+          if [[ "$COMMENTER_TYPE" == "Bot" ]]; then
+            IS_AGENT="true"
+          fi
+
+          echo "has_label=${HAS_LABEL}" >> "$GITHUB_OUTPUT"
+          echo "is_agent=${IS_AGENT}" >> "$GITHUB_OUTPUT"
+
+      - name: Remove labels and re-trigger
+        if: steps.check.outputs.has_label == 'true' && steps.check.outputs.is_agent == 'false'
+        run: |
+          source "./lib/github-api.sh"
+          source "./lib/claude-runner.sh"
+
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          REPO="${{ github.event.repository.name }}"
+
+          # Remove needs-input label
+          github_remove_label "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" "needs-input" 2>/dev/null || true
+
+          # Remove status/blocked label
+          github_remove_label "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" "status/blocked" 2>/dev/null || true
+
+          # Determine which agent to re-trigger based on issue labels
+          ISSUE_LABELS=$(github_get_issue "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" | \
+            jq -r '.labels[].name' | tr '\n' ' ')
+
+          CAPTAIN_RESPONSE="${{ github.event.comment.body }}"
+
+          PROMPT_BUILD="The Captain has responded to your question. Their response: ${CAPTAIN_RESPONSE} — Resume work on this issue with the Captain's decision. Continue from where you left off."
+          PROMPT_DEPLOY="The Captain has responded to your question. Their response: ${CAPTAIN_RESPONSE} — Resume deployment work with the Captain's decision."
+          PROMPT_DEFAULT="The Captain has responded to your question. Their response: ${CAPTAIN_RESPONSE} — Resume work on this issue with the Captain's decision."
+
+          if echo "$ISSUE_LABELS" | grep -q "build-ready\|team/build"; then
+            run_agent_for_issue "Builder" \
+              "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+              "$PROMPT_BUILD"
+
+          elif echo "$ISSUE_LABELS" | grep -q "deploy-ready\|team/ops"; then
+            run_agent_for_issue "Deployer" \
+              "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+              "$PROMPT_DEPLOY"
+
+          else
+            run_agent_for_issue "Builder" \
+              "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+              "$PROMPT_DEFAULT"
+          fi

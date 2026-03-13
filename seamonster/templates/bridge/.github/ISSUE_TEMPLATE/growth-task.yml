@@ -1,0 +1,78 @@
+name: "Growth Task"
+about: "Marketing or growth work — content, SEO, campaigns, outreach"
+labels:
+  - "team/growth"
+body:
+  - type: dropdown
+    id: campaign-type
+    attributes:
+      label: "Campaign Type"
+      description: "What kind of growth work is this?"
+      options:
+        - "Blog post / Content"
+        - "Landing page"
+        - "SEO optimization"
+        - "Social media campaign"
+        - "Email sequence"
+        - "Paid ads"
+        - "Partnership / Outreach"
+        - "Analytics setup"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: target-audience
+    attributes:
+      label: "Target Audience"
+      description: "Who is this aimed at? Be specific about the persona."
+      placeholder: |
+        Solo developers who want to ship faster.
+        They use Claude/Cursor, are comfortable with CLI tools, and want more automation.
+        Active on Twitter/X, Hacker News, and dev-focused subreddits.
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: "What specifically needs to be done?"
+      placeholder: "Write a blog post about how Sea Monster automates the build-review-deploy loop. Include a demo GIF showing the full flow from Gitea issue to deployed service."
+    validations:
+      required: true
+
+  - type: textarea
+    id: success-metrics
+    attributes:
+      label: "Success Metrics"
+      description: "How do we know this worked? Define measurable outcomes."
+      placeholder: |
+        - Blog post gets 1,000+ views in first week
+        - 50+ GitHub stars from traffic
+        - 10+ signups to newsletter
+    validations:
+      required: true
+
+  - type: dropdown
+    id: budget
+    attributes:
+      label: "Budget"
+      description: "Does this require spending? (Applies to paid campaigns)"
+      options:
+        - "None (organic)"
+        - "$0-50"
+        - "$50-200"
+        - "$200-500"
+        - "$500+ (requires Captain approval)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: "References & Inspiration"
+      description: "Links to similar campaigns, competitor examples, or style references."
+      placeholder: "https://example.com/great-blog-post"
+    validations:
+      required: false

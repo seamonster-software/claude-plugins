@@ -13,6 +13,7 @@
   ],
   "skills": [
     "./skills/gitea-workflow.md",
+    "./skills/github-workflow.md",
     "./skills/ntfy-notify.md",
     "./skills/contract-patterns.md",
     "./skills/escalation-protocol.md"

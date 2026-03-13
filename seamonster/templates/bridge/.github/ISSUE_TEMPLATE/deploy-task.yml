@@ -1,0 +1,82 @@
+name: "Deploy Task"
+about: "A deployment work item for the Deployer — ship to production"
+labels:
+  - "team/ops"
+  - "type/deploy"
+body:
+  - type: textarea
+    id: what-to-deploy
+    attributes:
+      label: "What to Deploy"
+      description: "Which project/service and what changes are being deployed?"
+      placeholder: |
+        Project: project-alpha
+        PR: #12 (feat: add authentication module)
+        Changes: JWT auth, refresh tokens, auth middleware
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: "Target Environment"
+      description: "Where is this being deployed?"
+      options:
+        - "Production"
+        - "Staging"
+        - "Preview"
+    validations:
+      required: true
+
+  - type: textarea
+    id: pre-deploy-checklist
+    attributes:
+      label: "Pre-Deploy Checklist"
+      description: "What must be verified before deploying?"
+      placeholder: |
+        - [ ] All tests pass on main
+        - [ ] PR has been reviewed and approved by Reviewer
+        - [ ] No open critical issues on this project
+        - [ ] Database migrations have been tested
+        - [ ] Environment variables are configured
+        - [ ] Traefik route exists or will be created
+    validations:
+      required: true
+
+  - type: textarea
+    id: rollback-plan
+    attributes:
+      label: "Rollback Plan"
+      description: "How do we undo this if something goes wrong?"
+      placeholder: |
+        1. Stop the service: systemctl stop seamonster-project-alpha
+        2. Revert to previous commit on main
+        3. Rebuild and restart
+        4. Verify health check passes on previous version
+        5. Notify ops topic
+    validations:
+      required: true
+
+  - type: textarea
+    id: health-checks
+    attributes:
+      label: "Health Checks"
+      description: "How do we verify the deployment is healthy?"
+      placeholder: |
+        - HTTP 200 on /health
+        - Auth endpoint responds to token generation
+        - Database connections are active
+    validations:
+      required: false
+
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: "Related Issues"
+      description: "Link the build issue, PR, or other deploy dependencies."
+      placeholder: |
+        Build issue: #47
+        PR: #12
+        Depends on: Redis deployed (#50)
+    validations:
+      required: false

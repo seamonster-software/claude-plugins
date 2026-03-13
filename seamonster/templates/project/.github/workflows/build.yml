@@ -1,0 +1,55 @@
+name: "CI: Build & Lint"
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect project type and build
+        run: |
+          echo "=== Build ==="
+
+          if [[ -f "package.json" ]]; then
+            echo "Detected: Node.js"
+            npm ci
+            npm run build --if-present
+            npm run lint --if-present
+            npm run typecheck --if-present
+          elif [[ -f "requirements.txt" ]] || [[ -f "pyproject.toml" ]]; then
+            echo "Detected: Python"
+            if [[ -f "pyproject.toml" ]]; then
+              pip install -e ".[dev]" 2>/dev/null || pip install -e .
+            else
+              pip install -r requirements.txt
+            fi
+            if command -v ruff &>/dev/null; then
+              ruff check .
+            elif command -v flake8 &>/dev/null; then
+              flake8 .
+            fi
+            if command -v mypy &>/dev/null; then
+              mypy . --ignore-missing-imports || true
+            fi
+          elif [[ -f "go.mod" ]]; then
+            echo "Detected: Go"
+            go build ./...
+            go vet ./...
+            if command -v golangci-lint &>/dev/null; then
+              golangci-lint run
+            fi
+          elif [[ -f "Cargo.toml" ]]; then
+            echo "Detected: Rust"
+            cargo build
+            cargo clippy -- -D warnings
+          else
+            echo "No recognized project type. Skipping build."
+          fi
+
+          echo "=== Build complete ==="

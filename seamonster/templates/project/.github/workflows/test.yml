@@ -1,0 +1,90 @@
+name: "CI: Test"
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  test:
+    runs-on: self-hosted
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect project type and run tests
+        id: tests
+        run: |
+          echo "=== Running tests ==="
+          RESULT="pass"
+          OUTPUT=""
+
+          if [[ -f "package.json" ]]; then
+            echo "Detected: Node.js"
+            npm ci
+            OUTPUT=$(npm test 2>&1) || RESULT="fail"
+          elif [[ -f "requirements.txt" ]] || [[ -f "pyproject.toml" ]]; then
+            echo "Detected: Python"
+            if [[ -f "pyproject.toml" ]]; then
+              pip install -e ".[dev]" 2>/dev/null || pip install -e .
+            else
+              pip install -r requirements.txt
+            fi
+            OUTPUT=$(python -m pytest -v 2>&1) || RESULT="fail"
+          elif [[ -f "go.mod" ]]; then
+            echo "Detected: Go"
+            OUTPUT=$(go test ./... -v 2>&1) || RESULT="fail"
+          elif [[ -f "Cargo.toml" ]]; then
+            echo "Detected: Rust"
+            OUTPUT=$(cargo test 2>&1) || RESULT="fail"
+          else
+            echo "No recognized project type. Skipping tests."
+            OUTPUT="No test runner detected."
+          fi
+
+          echo "result=${RESULT}" >> "$GITHUB_OUTPUT"
+
+          # Save output for the comment (truncate if very long)
+          TRUNCATED=$(echo "$OUTPUT" | tail -100)
+          echo "$TRUNCATED" > /tmp/test-output.txt
+
+          echo "=== Tests ${RESULT} ==="
+
+      - name: Post test results as PR comment
+        run: |
+          source "./lib/github-api.sh"
+
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.event.repository.name }}"
+          RESULT="${{ steps.tests.outputs.result }}"
+
+          if [[ "$RESULT" == "pass" ]]; then
+            STATUS="passed"
+          else
+            STATUS="failed"
+          fi
+
+          TEST_OUTPUT=$(cat /tmp/test-output.txt)
+
+          COMMENT=$(cat <<ENDCOMMENT
+          **Tests ${STATUS}**
+
+          <details>
+          <summary>Test output</summary>
+
+          \`\`\`
+          ${TEST_OUTPUT}
+          \`\`\`
+
+          </details>
+
+          Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ENDCOMMENT
+          )
+          github_comment "$SEAMONSTER_ORG" "$REPO" "$PR_NUMBER" "$COMMENT"
+
+      - name: Fail if tests failed
+        if: steps.tests.outputs.result == 'fail'
+        run: exit 1

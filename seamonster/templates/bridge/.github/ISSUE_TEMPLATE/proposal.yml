@@ -1,0 +1,63 @@
+name: "Proposal"
+about: "Scout team proposal — new project, feature, or opportunity"
+labels:
+  - "type/proposal"
+  - "team/scout"
+body:
+  - type: textarea
+    id: opportunity
+    attributes:
+      label: "Opportunity"
+      description: "What is the opportunity? What problem does it solve, and for whom?"
+      placeholder: "Describe the opportunity, the target audience, and why now is the right time."
+    validations:
+      required: true
+
+  - type: textarea
+    id: competition
+    attributes:
+      label: "Competition & Landscape"
+      description: "What alternatives exist? How does this differentiate?"
+      placeholder: "List competitors, their strengths/weaknesses, and how this approach is different."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: "Effort Estimate"
+      description: "Approximate size of the build effort."
+      options:
+        - "Small (1-3 days)"
+        - "Medium (1-2 weeks)"
+        - "Large (3-4 weeks)"
+        - "Extra Large (1+ months)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: revenue-model
+    attributes:
+      label: "Revenue Model"
+      description: "How does this make money? Pricing, monetization strategy."
+      placeholder: "Describe the revenue model — free tier, paid plans, one-time purchase, ads, etc."
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: "Risks & Unknowns"
+      description: "What could go wrong? What do we not know yet?"
+      placeholder: "List technical risks, market risks, regulatory concerns, or unknowns."
+    validations:
+      required: false
+
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: "Recommendation"
+      description: "Should we proceed? Why or why not?"
+      placeholder: "Yes/No with reasoning. Include conditions if applicable."
+    validations:
+      required: true

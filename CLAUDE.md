@@ -36,6 +36,7 @@ seamonster-software/claude-plugins/
 │   │   └── deployer.md
 │   ├── skills/                         # Domain knowledge
 │   │   ├── gitea-workflow.md
+│   │   ├── github-workflow.md
 │   │   ├── ntfy-notify.md
 │   │   ├── contract-patterns.md
 │   │   └── escalation-protocol.md
@@ -50,21 +51,25 @@ seamonster-software/claude-plugins/
 │   ├── lib/                            # Shell helpers (copied into user repos by init)
 │   │   ├── claude-runner.sh
 │   │   ├── gitea-api.sh
+│   │   ├── github-api.sh
 │   │   └── notify.sh
 │   └── templates/                      # Repo templates (copied by init)
 │       ├── bridge/                     # Bridge repo template
-│       │   ├── .gitea/workflows/
+│       │   ├── .gitea/workflows/       # Gitea Actions (Sovereign tier)
 │       │   ├── .gitea/ISSUE_TEMPLATE/
+│       │   ├── .github/workflows/      # GitHub Actions (Lite/Solo tiers)
+│       │   ├── .github/ISSUE_TEMPLATE/
 │       │   └── CLAUDE.md
 │       └── project/                    # Project repo template
 │           ├── .gitea/workflows/
+│           ├── .github/workflows/
 │           ├── CLAUDE.md
 │           └── README.md
 ```
 
 ## Current Phase
 
-**Phase 2: Marketplace + Bridge Architecture** — items 1-6 done, items 7-11 remain. See memory for details.
+**Phase 2: Marketplace + Bridge Architecture** — items 1-8 done, items 9-11 remain. See memory for details.
 
 ## Conventions
 
@@ -75,4 +80,5 @@ seamonster-software/claude-plugins/
 - Reviewer is always read-only (no Edit/Write tools)
 - Agent descriptions must include specific trigger patterns, not vague summaries
 - Workflows use repo-relative paths (`./lib/`) — no SEAMONSTER_ROOT env var
-- Templates exist for Gitea first; GitHub templates are next
+- Templates exist for both Gitea Actions and GitHub Actions
+- `claude-runner.sh` auto-detects platform (GITEA_URL → gitea-api.sh, GITHUB_TOKEN → github-api.sh)

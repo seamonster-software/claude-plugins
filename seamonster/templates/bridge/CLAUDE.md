@@ -143,7 +143,8 @@ Available to all workflows and agents via repository secrets:
 Source these in any script or workflow step (relative to repo root):
 
 ```bash
-source "./lib/gitea-api.sh"        # Git API wrapper
+source "./lib/gitea-api.sh"        # Gitea API wrapper (Sovereign tier)
+source "./lib/github-api.sh"       # GitHub API wrapper (Lite/Solo tiers)
 source "./lib/notify.sh"           # ntfy notification helpers
 source "./lib/claude-runner.sh"    # Claude invocation wrapper
 ```
