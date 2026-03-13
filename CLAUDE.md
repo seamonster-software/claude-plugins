@@ -28,12 +28,20 @@ seamonster-software/claude-plugins/
 ├── .claude-plugin/marketplace.json     # Marketplace manifest
 ├── seamonster/                         # Core plugin
 │   ├── .claude-plugin/plugin.json      # Plugin manifest
-│   ├── agents/                         # 5 core agents (13 planned)
+│   ├── agents/                         # 13 core agents
 │   │   ├── orchestrator.md
 │   │   ├── builder.md
 │   │   ├── reviewer.md
 │   │   ├── deployer.md
-│   │   └── proposal-writer.md
+│   │   ├── scout.md
+│   │   ├── analyst.md
+│   │   ├── proposal-writer.md
+│   │   ├── architect.md
+│   │   ├── planner.md
+│   │   ├── sysadmin.md
+│   │   ├── qa.md
+│   │   ├── security.md
+│   │   └── monitor.md
 │   ├── skills/                         # Domain knowledge
 │   │   ├── github-workflow.md
 │   │   ├── contract-patterns.md
@@ -73,3 +81,7 @@ seamonster-software/claude-plugins/
 - Agent descriptions must include specific trigger patterns, not vague summaries
 - Workflows use repo-relative paths (`./lib/`) — no SEAMONSTER_ROOT env var
 - `/seamonster:init` uses `gh` CLI — no raw curl in commands
+- Plugin typeahead requires auto-discovery — no `name` field in command frontmatter, no component arrays in plugin.json
+- When dispatching multiple builders to same repo, use `isolation: "worktree"` to avoid branch collisions
+- GitHub blocks formal review approvals on own PRs — reviews post as comments instead
+- PRs don't auto-close issues — use "Closes #N" in PR body, or close manually after merge

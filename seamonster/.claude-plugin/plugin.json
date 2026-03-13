@@ -1,6 +1,6 @@
 {
   "name": "seamonster",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Sea Monster — Autonomous AI Crew. Agents coordinate via GitHub issues and build/ship/market software 24/7.",
   "author": {
     "name": "Sea Monster Software"
