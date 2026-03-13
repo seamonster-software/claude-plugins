@@ -193,7 +193,7 @@ Based on the verdict:
 ```bash
 source ./lib/git-api.sh
 
-sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" '["team/scout"]'
+sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" '["type/proposal"]'
 
 sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Analyst** — assessment complete. Verdict: **Pursue**.
@@ -212,6 +212,8 @@ sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
 Reason: [brief explanation]. Closing this opportunity.
 
 What would change the calculus: [conditions that would warrant revisiting]."
+
+sm_close_issue "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER"
 ```
 
 #### If "Needs more data": Request specific research
@@ -227,6 +229,8 @@ sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
 2. [Specific data point needed]
 
 Requesting Scout to gather this information."
+
+sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" '["needs-input", "status/waiting"]'
 ```
 
 ## Comparative Analysis
