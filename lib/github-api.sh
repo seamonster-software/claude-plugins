@@ -6,7 +6,11 @@
 
 set -euo pipefail
 
-: "${GITHUB_TOKEN:?GITHUB_TOKEN must be set}"
+# GITHUB_TOKEN is required but may be set by git-api.sh from gh CLI auth
+if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+  echo "ERROR: GITHUB_TOKEN not set. Set it directly or authenticate gh CLI (gh auth login)." >&2
+  exit 1
+fi
 
 GITHUB_API="https://api.github.com"
 
