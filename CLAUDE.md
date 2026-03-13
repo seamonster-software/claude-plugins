@@ -67,10 +67,6 @@ seamonster-software/claude-plugins/
 │           └── README.md
 ```
 
-## Current Phase
-
-**Phase 2: Marketplace + Bridge Architecture** — items 1-8 done, items 9-11 remain. See memory for details.
-
 ## Conventions
 
 - Shell scripts: `set -euo pipefail`, idempotent, color output
@@ -81,4 +77,5 @@ seamonster-software/claude-plugins/
 - Agent descriptions must include specific trigger patterns, not vague summaries
 - Workflows use repo-relative paths (`./lib/`) — no SEAMONSTER_ROOT env var
 - Templates exist for both Gitea Actions and GitHub Actions
-- `claude-runner.sh` auto-detects platform (GITEA_URL → gitea-api.sh, GITHUB_TOKEN → github-api.sh)
+- `claude-runner.sh` checks GITEA_URL / GITHUB_TOKEN env vars to pick the right API wrapper
+- Git API functions are NOT unified yet — agents call `gitea_*` or `github_*` directly (item 9 backlog)
