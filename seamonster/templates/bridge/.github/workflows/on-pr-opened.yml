@@ -9,8 +9,6 @@ jobs:
     runs-on: self-hosted
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NTFY_URL: ${{ secrets.NTFY_URL }}
-      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
       SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
     steps:
       - name: Checkout

@@ -3,8 +3,7 @@ name: "GitHub Workflow"
 description: >
   Complete reference for GitHub API usage via lib/github-api.sh.
   Covers issue lifecycle, label management, PR workflow, milestones,
-  and comment patterns for agent updates. Use this when working with
-  GitHub (Lite/Solo tiers) instead of gitea-workflow.
+  and comment patterns for agent updates.
 ---
 
 # GitHub Workflow Reference
@@ -19,17 +18,6 @@ source ./lib/github-api.sh
 Required environment variables:
 - `GITHUB_TOKEN` — API token (automatic in GitHub Actions, or a PAT)
 - `SEAMONSTER_ORG` — the GitHub organization or user name
-
-## Key Differences from Gitea
-
-| Feature | Gitea | GitHub |
-|---------|-------|--------|
-| Token env var | `GITEA_TOKEN` | `GITHUB_TOKEN` (automatic in Actions) |
-| Org-level labels | Yes | No (per-repo only) |
-| Issue dependencies | Built-in | Not native (use "blocked by #N" in body) |
-| Merge check | `.merged == true` | `.merged_at != null` |
-| Label operations | By ID | By name |
-| Time tracking | Built-in | Not native |
 
 ## Issue Lifecycle
 
@@ -115,7 +103,7 @@ done
 ### Add Labels
 
 ```bash
-# GitHub uses label names directly (not IDs like Gitea)
+# GitHub uses label names directly
 github_add_labels "$SEAMONSTER_ORG" "project-alpha" "47" '["build-ready"]'
 
 # Multiple labels
@@ -146,7 +134,7 @@ These labels drive the issue state machine. Adding them triggers GitHub Actions:
 |---|---|---|
 | `approved` | `on-approved.yml` | Architect + Planner |
 | `build-ready` | `on-build-ready.yml` | Builder |
-| `needs-input` | `on-needs-input.yml` | ntfy to Captain |
+| `needs-input` | `on-needs-input.yml` | GitHub notification to Captain |
 | `deploy-ready` | `on-deploy-ready.yml` | Deployer |
 
 ## Pull Request Workflow
@@ -213,7 +201,7 @@ echo "GitHub API: HTTP ${status}"
 
 ## Comment Patterns for Agents
 
-Same format as Gitea — every agent comment follows:
+Every agent comment follows:
 
 ```
 **{Role}** — {action summary}
@@ -248,7 +236,5 @@ Set these as repository or organization secrets in GitHub Settings:
 | Secret | Value | Notes |
 |--------|-------|-------|
 | `GITHUB_TOKEN` | (automatic) | Provided by GitHub Actions |
-| `NTFY_URL` | e.g. `https://ntfy.sh` | All tiers |
-| `NTFY_TOKEN` | ntfy auth token | Optional for public ntfy.sh |
-| `SEAMONSTER_ORG` | The org name | All tiers |
+| `SEAMONSTER_ORG` | The org name | Used by workflow scripts |
 | `SEAMONSTER_DOMAIN` | e.g. `example.com` | For deploy workflows |

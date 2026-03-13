@@ -10,8 +10,6 @@ jobs:
     runs-on: self-hosted
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NTFY_URL: ${{ secrets.NTFY_URL }}
-      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
       SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
       SEAMONSTER_DOMAIN: ${{ secrets.SEAMONSTER_DOMAIN }}
     steps:
@@ -48,7 +46,7 @@ jobs:
           ISSUE_NUMBER="${{ steps.context.outputs.issue_number }}"
           REPO="${{ github.event.repository.name }}"
 
-          DEPLOY_STEPS="1. Pull latest main 2. Build/install dependencies 3. Create or update deployment configuration 4. Health check 5. Notify the ops ntfy topic"
+          DEPLOY_STEPS="1. Pull latest main 2. Build/install dependencies 3. Create or update deployment configuration 4. Health check 5. Post deploy status to the issue"
 
           if [[ "$ISSUE_NUMBER" == "0" || -z "$ISSUE_NUMBER" ]]; then
             run_claude "Deployer" \
@@ -65,9 +63,13 @@ jobs:
       - name: Handle failure
         if: failure()
         run: |
-          source "./lib/notify.sh"
+          source "./lib/github-api.sh"
 
           REPO="${{ github.event.repository.name }}"
+          ISSUE_NUMBER="${{ steps.context.outputs.issue_number }}"
 
-          ntfy_urgent "Deploy failed — ${REPO}" \
-            "Push-to-main deploy failed. Check workflow logs.\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [[ "$ISSUE_NUMBER" != "0" && -n "$ISSUE_NUMBER" ]]; then
+            FAIL_MSG="**Deployer** — deploy workflow failed. Check workflow logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            github_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" "$FAIL_MSG"
+            github_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" '["status/blocked"]'
+          fi

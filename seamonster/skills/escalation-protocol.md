@@ -110,18 +110,7 @@ sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   '["status/blocked", "needs-input"]'
 ```
 
-### Step 3: Send ntfy Notification
-
-```bash
-source ./lib/notify.sh
-
-ntfy_decision "$CREW_NAME" "$REPO" "$ISSUE_NUMBER" \
-  "Sessions: in-memory (simpler, sessions lost on restart) or Redis (persistent, adds dependency)?" \
-  "In-memory" "Use in-memory sessions — keep it simple" \
-  "Redis" "Use Redis-backed sessions — persistence matters"
-```
-
-### Step 4: Move On
+### Step 3: Move On
 
 Check for other unblocked work:
 
@@ -148,11 +137,7 @@ fi
 
 ## When the Captain Responds
 
-The Captain responds in one of three ways:
-
-1. **ntfy action button** — taps a button, which POSTs a comment to the issue
-2. **Issue comment** — writes a comment directly
-3. **No response** — the agent works on other things; the issue stays blocked
+The Captain responds by posting a comment on the issue directly (or via GitHub mobile).
 
 When a response arrives:
 1. The `on-needs-input` workflow detects the new comment
@@ -173,23 +158,23 @@ The decision is permanently recorded in the issue timeline.
 
 ## Escalation Priority
 
-Not all escalations are equally urgent. Match the notification priority to
-the impact:
+Not all escalations are equally urgent. Match the label and comment urgency
+to the impact:
 
-| Situation | Priority | Topic |
-|---|---|---|
-| Service is down in production | `urgent` | urgent |
-| Security vulnerability found | `urgent` | urgent |
-| Blocker that halts all build progress | `urgent` | urgent |
-| Design decision, other work available | `high` | build |
-| Nice-to-have question, low impact | `default` | build |
-| Non-blocking feedback request | `low` | digest |
+| Situation | Priority |
+|---|---|
+| Service is down in production | `urgent` |
+| Security vulnerability found | `urgent` |
+| Blocker that halts all build progress | `urgent` |
+| Design decision, other work available | `high` |
+| Nice-to-have question, low impact | `default` |
+| Non-blocking feedback request | `low` |
 
 ## Timeout Handling
 
 If a blocked issue receives no response within 48 hours:
 - The daily digest mentions it as "still awaiting input"
-- After 7 days, the Orchestrator (or dispatch workflow) re-sends the notification
+- After 7 days, the Orchestrator (or dispatch workflow) re-posts the question as a comment
 - After 14 days, the issue is flagged in the weekly learnings as "stale blocker"
 
 Agents do not poll for responses. The workflow on `issue_comment` handles
@@ -199,8 +184,8 @@ re-triggering automatically.
 
 If an agent hits multiple blockers in the same session:
 - Post each as a separate comment on the relevant issue
-- Each blocker gets its own ntfy notification
-- Bundle them if they are related (one notification with multiple questions)
+- Each blocker gets its own GitHub notification
+- Bundle them if they are related (one comment with multiple questions)
 - The Captain can respond to them independently and in any order
 
 ## Cascading Escalation
@@ -231,10 +216,10 @@ service layer. Needs Architect's input before I proceed."
 1. Never stall silently. If you are blocked, escalate.
 2. Always provide options with trade-offs. Never ask open-ended questions.
 3. Always include a recommendation when you have one.
-4. Post the question on the issue (permanent record) AND send ntfy (immediate alert).
+4. Post the question on the issue as a comment (permanent record and GitHub notification).
 5. Add both `needs-input` and `status/blocked` labels.
 6. After escalating, check for other unblocked work. Do not idle.
 7. When the Captain responds, the decision is final — do not re-ask.
 8. Keep the question concise. The Captain is reading on a phone.
-9. Include the project name and issue number in the notification title.
+9. Include the project name and issue number in the comment.
 10. Two options is ideal. Three is acceptable. More than three means you need to narrow down first.

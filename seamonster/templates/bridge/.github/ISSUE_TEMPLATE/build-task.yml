@@ -48,7 +48,7 @@ body:
     id: upstream-downstream
     attributes:
       label: "Related Issues"
-      description: "Issues that block this, or that this blocks. Use Gitea dependency syntax."
+      description: "Issues that block this, or that this blocks."
       placeholder: |
         Blocked by: #44 (user model)
         Blocks: #46 (API routes need auth middleware)

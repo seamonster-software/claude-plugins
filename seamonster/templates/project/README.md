@@ -6,7 +6,7 @@
 
 ```bash
 # Clone
-git clone {{GITEA_URL}}/{{SEAMONSTER_ORG}}/{{PROJECT_NAME}}.git
+git clone https://github.com/{{SEAMONSTER_ORG}}/{{PROJECT_NAME}}.git
 cd {{PROJECT_NAME}}
 
 # Install dependencies

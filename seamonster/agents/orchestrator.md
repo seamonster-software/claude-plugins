@@ -77,15 +77,27 @@ sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUM" '["build-ready"]'
 ### For blocked decisions:
 
 When you identify something that needs the Captain's input before work can proceed,
-use the escalation protocol:
+use the escalation protocol — post the question on the issue and add labels:
 
 ```bash
-source ./lib/notify.sh
+source ./lib/git-api.sh
 
-ntfy_decision "Orchestrator" "$PROJECT" "$ISSUE" \
-  "Should we use PostgreSQL or SQLite for this project? PG is more scalable but adds ops overhead." \
-  "PostgreSQL" "Use PostgreSQL — scalability matters" \
-  "SQLite" "Use SQLite — keep it simple"
+sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE" \
+  "**Orchestrator** — blocked, need a decision.
+
+**Question:** Should we use PostgreSQL or SQLite for this project?
+
+**Option A: PostgreSQL**
+- More scalable, production-grade
+- Adds ops overhead (provisioning, backups)
+
+**Option B: SQLite**
+- Simpler, no external dependency
+- Limited concurrency, harder to scale
+
+**Recommendation:** PostgreSQL — scalability matters for a production service."
+
+sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE" '["needs-input", "status/blocked"]'
 ```
 
 ## Status Tracking
@@ -110,8 +122,7 @@ done
 ## Context You Always Have
 
 - `SEAMONSTER_ORG` — the git organization name
-- `SM_PLATFORM` — auto-detected: "gitea" or "github"
-- Lib scripts at `./lib/` — source `git-api.sh` for platform-agnostic API access
+- Lib scripts at `./lib/` — source `git-api.sh` for GitHub API access
 - Project repos are cloned by the workflow runner into the workspace
 
 ## Rules

@@ -117,7 +117,7 @@ run_claude() {
 
 # Run an agent with a git issue context.
 # Fetches issue details and includes them in the prompt.
-# Works with both Gitea and GitHub depending on which API script is available.
+# Fetches issue details from GitHub and includes them in the prompt.
 # Args: crew_member, owner, repo, issue_number, additional_prompt
 run_agent_for_issue() {
   local crew="$1" owner="$2" repo="$3" issue="$4" prompt="$5"

@@ -144,15 +144,6 @@ sm_review_pr "$SEAMONSTER_ORG" "$REPO" "$PR_NUMBER" \
 2 critical issues must be resolved before merge. Sending back to Builder."
 ```
 
-Then notify:
-
-```bash
-source ./lib/notify.sh
-
-ntfy_build "Review complete — ${REPO} PR #${PR_NUMBER}" \
-  "Changes requested: 2 critical, 1 important, 1 minor issue found."
-```
-
 ### 5. Update Issue Status
 
 ```bash

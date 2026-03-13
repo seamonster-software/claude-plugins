@@ -7,7 +7,7 @@ on:
     types: [created]
 
 jobs:
-  # When an agent adds 'needs-input' — notify the Captain
+  # When an agent adds 'needs-input' — the Captain gets a GitHub notification
   notify-captain:
     if: >-
       github.event_name == 'issues' &&
@@ -15,39 +15,19 @@ jobs:
     runs-on: self-hosted
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NTFY_URL: ${{ secrets.NTFY_URL }}
-      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
       SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Send ntfy notification
+      - name: Log escalation
         run: |
-          source "./lib/github-api.sh"
-          source "./lib/notify.sh"
-
           ISSUE_NUMBER="${{ github.event.issue.number }}"
           ISSUE_TITLE="${{ github.event.issue.title }}"
           REPO="${{ github.event.repository.name }}"
 
-          # Get the last comment on the issue (the agent's question)
-          LAST_COMMENT=$(github_get "/repos/${SEAMONSTER_ORG}/${REPO}/issues/${ISSUE_NUMBER}/comments?per_page=1&direction=desc" | \
-            jq -r '.[0].body // "No comment found"')
-
-          # Truncate for notification body (Captain reads on phone)
-          BODY=$(echo "$LAST_COMMENT" | head -20)
-
-          # Build the view action
-          ISSUE_URL="${{ github.server_url }}/${SEAMONSTER_ORG}/${REPO}/issues/${ISSUE_NUMBER}"
-          VIEW_ACTION="view, View Issue, ${ISSUE_URL}"
-
-          ntfy_send "urgent" \
-            "Input needed — ${REPO} #${ISSUE_NUMBER}: ${ISSUE_TITLE}" \
-            "$BODY" \
-            "urgent" \
-            "question" \
-            "$VIEW_ACTION"
+          echo "Escalation: needs-input label added to ${REPO}#${ISSUE_NUMBER}: ${ISSUE_TITLE}"
+          echo "Captain will be notified via GitHub notification (issue labeled event)."
 
   # When the Captain responds to a 'needs-input' issue — remove label and re-trigger work
   captain-responded:
@@ -57,8 +37,6 @@ jobs:
     runs-on: self-hosted
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NTFY_URL: ${{ secrets.NTFY_URL }}
-      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
       SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
     steps:
       - name: Checkout

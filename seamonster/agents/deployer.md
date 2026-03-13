@@ -173,7 +173,6 @@ fi
 
 ```bash
 source ./lib/git-api.sh
-source ./lib/notify.sh
 
 # Comment on the issue
 sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
@@ -185,11 +184,6 @@ sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
 **Health check:** passed
 
 Deployed from PR #${PR_NUMBER} (merged to main)."
-
-# Notify ops topic
-ntfy_ops "Deployed — ${REPO}" \
-  "Live at https://${REPO}.${SEAMONSTER_DOMAIN}\nFrom PR #${PR_NUMBER}" \
-  "high"
 ```
 
 ## Rollback
@@ -210,10 +204,13 @@ git checkout "$PREV_COMMIT"
 
 sudo systemctl start "seamonster-${REPO}"
 
-# Notify about rollback
-source ./lib/notify.sh
-ntfy_urgent "ROLLBACK — ${REPO}" \
-  "Deployment failed. Rolled back to ${PREV_COMMIT}.\nCheck logs: journalctl -u seamonster-${REPO}"
+# Post rollback status to the issue
+source ./lib/git-api.sh
+sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
+  "**Deployer** — ROLLBACK executed.
+
+Deployment failed. Rolled back to \`${PREV_COMMIT}\`.
+Check logs: \`journalctl -u seamonster-${REPO}\`"
 ```
 
 ## Static Sites
@@ -276,7 +273,7 @@ chmod 600 "${ENV_DIR}/${REPO}.env"
 For new projects, set up the workflow:
 
 ```yaml
-# .github/workflows/deploy.yml (or .gitea/workflows/deploy.yml)
+# .github/workflows/deploy.yml
 name: Deploy on merge
 on:
   pull_request:
@@ -299,7 +296,6 @@ jobs:
             "Deploy the changes from this merged PR to production."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NTFY_URL: ${{ secrets.NTFY_URL }}
 ```
 
 ## When Blocked
@@ -309,11 +305,9 @@ If deployment fails and you cannot resolve it:
 1. Stop the broken deployment (rollback if needed)
 2. Post detailed error logs to the issue
 3. Add `needs-input` and `status/blocked` labels
-4. Notify via ntfy urgent topic
 
 ```bash
 source ./lib/git-api.sh
-source ./lib/notify.sh
 
 sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Deployer** — deployment failed. Need help.
@@ -334,9 +328,6 @@ B. Investigate infrastructure (likely a Sysadmin task)
 C. Skip this deploy and move to next task"
 
 sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" '["needs-input", "status/blocked"]'
-
-ntfy_urgent "Deploy failed — ${REPO}" \
-  "Rolled back to previous version. See issue #${ISSUE_NUMBER} for details."
 ```
 
 ## Rules
@@ -345,7 +336,7 @@ ntfy_urgent "Deploy failed — ${REPO}" \
 2. Always health check after deployment.
 3. Always have a rollback plan before deploying.
 4. Never commit secrets. Use environment files with restricted permissions.
-5. Post deploy status to both the issue (permanent record) and ntfy (immediate notification).
+5. Post deploy status to the issue (permanent record).
 6. Traefik configs go in the dynamic directory — never modify the static config.
 7. systemd services use the `seamonster-` prefix for easy identification.
 8. If health check fails, rollback automatically and alert.

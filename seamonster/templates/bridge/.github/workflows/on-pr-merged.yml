@@ -10,8 +10,6 @@ jobs:
     runs-on: self-hosted
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NTFY_URL: ${{ secrets.NTFY_URL }}
-      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
       SEAMONSTER_ORG: ${{ secrets.SEAMONSTER_ORG }}
       SEAMONSTER_DOMAIN: ${{ secrets.SEAMONSTER_DOMAIN }}
     steps:
@@ -46,15 +44,13 @@ jobs:
           3. Create or update deployment configuration if this is a web service
           4. Run a health check to verify the deployment
           5. Post a deployment status comment on issue #${ISSUE_NUMBER} with the live URL
-          6. Notify the ops ntfy topic with the deployment result
 
           If the deployment fails:
           - Roll back to the previous known-good state
           - Post error details on the issue
-          - Notify the urgent ntfy topic
+          - Add needs-input and status/blocked labels
 
-          Use ./lib/github-api.sh for all issue interactions.
-          Use ./lib/notify.sh for notifications.
+          Use ./lib/git-api.sh for all issue interactions (sm_* functions).
 
           The domain for deployed services is: ${SEAMONSTER_DOMAIN}
           Services are reachable at: https://${REPO}.${SEAMONSTER_DOMAIN}
@@ -70,10 +66,11 @@ jobs:
       - name: Handle failure
         if: failure()
         run: |
-          source "./lib/notify.sh"
+          source "./lib/github-api.sh"
 
           REPO="${{ github.event.repository.name }}"
           PR_NUMBER="${{ github.event.pull_request.number }}"
 
-          ntfy_urgent "Deploy failed — ${REPO}" \
-            "Deployer workflow failed for PR #${PR_NUMBER}. Check workflow logs.\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # Post failure to the PR as a comment
+          FAIL_MSG="**Deployer** — deploy workflow failed for PR #${PR_NUMBER}. Check workflow logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          github_comment "$SEAMONSTER_ORG" "$REPO" "$PR_NUMBER" "$FAIL_MSG"

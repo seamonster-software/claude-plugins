@@ -45,7 +45,7 @@ Labels drive the workflow. Adding a label triggers a workflow that spawns the ap
 |---|---|---|
 | `approved` | `on-approved.yml` | Architect designs, Planner plans |
 | `build-ready` | `on-build-ready.yml` | Builder builds on issue branch, opens PR |
-| `needs-input` | `on-needs-input.yml` | ntfy notification to Captain |
+| `needs-input` | `on-needs-input.yml` | GitHub notification to Captain |
 | `deploy-ready` | `on-deploy-ready.yml` | Deployer deploys to production |
 | `incident` | `on-incident.yml` | Post-mortem analysis |
 
@@ -118,7 +118,7 @@ Implements #{issue_number}.
 ## Rules
 
 1. **Agents post comments on issues** — the issue timeline is the audit trail. If it is not in git, it did not happen.
-2. **Never stall silently** — if blocked, escalate immediately. Add `needs-input` and `status/blocked` labels, send ntfy notification, then move to other work.
+2. **Never stall silently** — if blocked, escalate immediately. Add `needs-input` and `status/blocked` labels, then move to other work.
 3. **Escalate with options** — always present 2-3 options with trade-offs and a recommendation. Never ask open-ended questions.
 4. **Read-only reviewers** — the Reviewer never modifies code. Report, never fix.
 5. **No secrets in code** — use environment variables. Never commit credentials, tokens, or API keys.
@@ -131,25 +131,15 @@ Available to all workflows and agents via repository secrets:
 
 | Variable | Description |
 |---|---|
-| `GITEA_URL` | Gitea server URL (Sovereign tier) |
-| `GITEA_TOKEN` | Gitea API token (Sovereign tier) |
 | `GITHUB_TOKEN` | GitHub API token (automatic in GitHub Actions) |
-| `NTFY_URL` | Base URL of the ntfy server |
-| `NTFY_TOKEN` | Auth token for ntfy (optional) |
 | `SEAMONSTER_ORG` | Git organization name |
 | `SEAMONSTER_DOMAIN` | Domain for deployed services |
-| `SM_PLATFORM` | Auto-detected: "gitea" or "github" (set by git-api.sh) |
 
 ## Lib Scripts
 
-Source `git-api.sh` for platform-agnostic git operations. It auto-detects the
-platform (Gitea or GitHub) and provides unified `sm_*` functions:
+Source `git-api.sh` for GitHub API operations. It provides unified `sm_*` functions:
 
 ```bash
-source "./lib/git-api.sh"          # Unified git API — use sm_* functions
-source "./lib/notify.sh"           # ntfy notification helpers
+source "./lib/git-api.sh"          # GitHub API — use sm_* functions
 source "./lib/claude-runner.sh"    # Claude invocation wrapper
 ```
-
-Platform-specific backends (`gitea-api.sh`, `github-api.sh`) are sourced
-automatically by `git-api.sh` — agents and commands never source them directly.

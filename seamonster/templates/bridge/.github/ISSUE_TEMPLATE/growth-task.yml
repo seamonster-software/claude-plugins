@@ -38,7 +38,7 @@ body:
     attributes:
       label: "Description"
       description: "What specifically needs to be done?"
-      placeholder: "Write a blog post about how Sea Monster automates the build-review-deploy loop. Include a demo GIF showing the full flow from Gitea issue to deployed service."
+      placeholder: "Write a blog post about how Sea Monster automates the build-review-deploy loop. Include a demo GIF showing the full flow from GitHub issue to deployed service."
     validations:
       required: true
 

@@ -88,7 +88,7 @@ Implements #{issue_number}.
 ## Deployment
 
 - **Target:** `https://{{PROJECT_NAME}}.{{DOMAIN}}`
-- **Method:** Merge to main triggers Deployer via Gitea Actions
+- **Method:** Merge to main triggers Deployer via GitHub Actions
 - **Service:** `seamonster-{{PROJECT_NAME}}` (systemd)
 - **Deployment config:** Managed by the Deployer agent
 - **Env file:** `.env` (gitignored) or via repository secrets
@@ -106,13 +106,13 @@ Implements #{issue_number}.
 - The Builder builds features on issue branches and opens PRs
 - The Reviewer reviews PRs (read-only) and approves or requests changes
 - The Deployer deploys on merge to main
-- All agents post progress comments on the relevant Gitea issue
+- All agents post progress comments on the relevant GitHub issue
 - If blocked, agents escalate via the escalation protocol — never stall silently
 
 ## Secrets
 
 Never commit secrets. Reference via environment variables.
 
-- Gitea Actions secrets for CI/CD: `${{ secrets.NAME }}`
+- GitHub Actions secrets for CI/CD: `${{ secrets.NAME }}`
 - Runtime secrets in env file: `.env` (gitignored, `600` permissions)
 - File permissions: env files are `600`, env directory is `700`

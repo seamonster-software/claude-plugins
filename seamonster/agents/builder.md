@@ -136,12 +136,6 @@ PR: #${PR_NUMBER}
 Branch: \`issue-${ISSUE_NUMBER}-${SHORT_DESC}\`
 
 Ready for Reviewer."
-
-# Notify on the build topic
-source ./lib/notify.sh
-
-ntfy_build "PR ready for review — ${REPO} #${PR_NUMBER}" \
-  "Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}\nBranch: issue-${ISSUE_NUMBER}-${SHORT_DESC}"
 ```
 
 ## Contract Patterns
@@ -176,14 +170,12 @@ each on its own branch, merging to the issue branch when complete.
 If you hit a question that requires a design decision or Captain input:
 
 1. Post the question on the issue with options and trade-offs
-2. Add the `needs-input` label
-3. Send an ntfy decision notification
-4. Check for other unblocked work to continue on
-5. If nothing else to do, exit cleanly — you'll be re-triggered when input arrives
+2. Add the `needs-input` and `status/blocked` labels
+3. Check for other unblocked work to continue on
+4. If nothing else to do, exit cleanly — you'll be re-triggered when input arrives
 
 ```bash
 source ./lib/git-api.sh
-source ./lib/notify.sh
 
 sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
   "**Builder** — blocked, need a decision.
@@ -202,14 +194,8 @@ sm_comment "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" \
 
 **Recommendation:** REST — simpler for the current scope, can add GraphQL later."
 
-# Add needs-input label
-sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" '["needs-input"]'
-
-# Notify Captain
-ntfy_decision "Builder" "$REPO" "$ISSUE_NUMBER" \
-  "API style: REST (simpler, cacheable) or GraphQL (flexible, self-documenting)?" \
-  "REST" "Use REST API" \
-  "GraphQL" "Use GraphQL API"
+# Add needs-input and blocked labels
+sm_add_labels "$SEAMONSTER_ORG" "$REPO" "$ISSUE_NUMBER" '["needs-input", "status/blocked"]'
 ```
 
 ## Rules

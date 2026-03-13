@@ -11,38 +11,25 @@ This is the one-time onboarding command. It creates the bridge (coordination rep
 ## Prerequisites
 
 Before running this command, the user needs:
-- A git org (GitHub or Gitea) where repos will live
-- `tea` CLI authenticated (Gitea) OR `gh` CLI authenticated (GitHub)
+- A GitHub org (or personal account) where repos will live
+- `gh` CLI authenticated (`gh auth login`)
 - `jq` installed
 
-## Step 1: Detect Platform
+## Step 1: Verify GitHub Authentication
 
-Determine whether the user is on GitHub or Gitea by checking for CLI tools:
+Confirm the `gh` CLI is authenticated:
 
 ```bash
-# Check for tea (Gitea) first, then gh (GitHub)
-if command -v tea &>/dev/null && tea login list 2>/dev/null | grep -q .; then
-  PLATFORM="gitea"
-  GIT_CLI="tea"
-  WORKFLOW_DIR=".gitea/workflows"
-  GITEA_URL=$(tea login list --output simple 2>/dev/null | head -1 | awk '{print $2}')
-elif command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
-  PLATFORM="github"
-  GIT_CLI="gh"
-  WORKFLOW_DIR=".github/workflows"
+if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
+  echo "GitHub CLI authenticated"
 else
-  # Ask the user which platform they're using
+  echo "GitHub CLI not authenticated. Run: gh auth login"
+  exit 1
 fi
 ```
 
-If neither CLI is detected, ask the user which platform they're using and help them authenticate:
-- **Gitea:** `tea login add --name <name> --url <gitea-url> --token <token>`
-- **GitHub:** `gh auth login`
-
-Do NOT proceed without a working platform connection.
-
-After detection, **confirm with the user** before proceeding:
-> Detected **$PLATFORM** via `$GIT_CLI`. Is this correct? (use AskUserQuestion)
+**Confirm with the user** before proceeding:
+> Detected **GitHub** via `gh`. Is this correct? (use AskUserQuestion)
 
 ## Step 2: Gather Configuration
 
@@ -50,12 +37,10 @@ Ask the user for these values (use AskUserQuestion for each):
 
 | Value | Question | Default | Required |
 |-------|----------|---------|----------|
-| `ORG` | What's your git org/owner name? | — | Yes |
-| `NTFY_URL` | ntfy server URL? (leave blank for ntfy.sh) | `https://ntfy.sh` | No |
+| `ORG` | What's your GitHub org/owner name? | — | Yes |
 
 Validate the org exists:
-- **GitHub:** `gh api /orgs/$ORG` or `gh api /users/$ORG`
-- **Gitea:** `tea organizations list 2>/dev/null | grep -q "$ORG"` or `tea repos list --owner "$ORG"`
+- `gh api /orgs/$ORG` or `gh api /users/$ORG`
 
 ## Step 3: Locate Plugin Templates
 
@@ -78,42 +63,33 @@ If the plugin root can't be found, tell the user to install the plugin first: `c
 Check if a `bridge` repo already exists in the org. If it does, ask the user if they want to use it or pick a different name.
 
 Create the repo:
-- **GitHub:** `gh repo create $ORG/bridge --public --description "Sea Monster Bridge — Captain's command center" --clone`
-- **Gitea:** `tea repos create --name bridge --owner "$ORG" --description "Sea Monster Bridge — Captain's command center"`, then clone it
+```bash
+gh repo create $ORG/bridge --public --description "Sea Monster Bridge — Captain's command center" --clone
+```
 
 Clone the new repo to a temp directory:
 ```bash
 WORK_DIR=$(mktemp -d)
 cd "$WORK_DIR"
-# GitHub
 gh repo clone "$ORG/bridge" bridge
-# Gitea
-tea repos clone "$ORG/bridge"
 cd bridge
 ```
 
 ## Step 5: Initialize the Bridge
 
-Copy bridge templates from the plugin into the cloned repo. Use the
-platform-specific template directory (`.gitea/` or `.github/`):
+Copy bridge templates from the plugin into the cloned repo:
 
 ```bash
-# Workflows — copy from the matching platform template
+WORKFLOW_DIR=".github/workflows"
+
+# Workflows
 mkdir -p "$WORKFLOW_DIR"
-if [[ "$PLATFORM" == "gitea" ]]; then
-  cp -r "$PLUGIN_ROOT/templates/bridge/.gitea/workflows/"* "$WORKFLOW_DIR/"
-else
-  cp -r "$PLUGIN_ROOT/templates/bridge/.github/workflows/"* "$WORKFLOW_DIR/"
-fi
+cp -r "$PLUGIN_ROOT/templates/bridge/.github/workflows/"* "$WORKFLOW_DIR/"
 
 # Issue templates
-TEMPLATE_DIR=$(dirname "$WORKFLOW_DIR")/ISSUE_TEMPLATE
+TEMPLATE_DIR=".github/ISSUE_TEMPLATE"
 mkdir -p "$TEMPLATE_DIR"
-if [[ "$PLATFORM" == "gitea" ]]; then
-  cp -r "$PLUGIN_ROOT/templates/bridge/.gitea/ISSUE_TEMPLATE/"* "$TEMPLATE_DIR/"
-else
-  cp -r "$PLUGIN_ROOT/templates/bridge/.github/ISSUE_TEMPLATE/"* "$TEMPLATE_DIR/"
-fi
+cp -r "$PLUGIN_ROOT/templates/bridge/.github/ISSUE_TEMPLATE/"* "$TEMPLATE_DIR/"
 
 # Lib scripts
 mkdir -p lib
@@ -129,37 +105,8 @@ echo ".seamonster/" >> .gitignore
 
 ## Step 6: Create Labels
 
-Create the scoped labels that drive the issue state machine.
+Create the scoped labels that drive the issue state machine. Skip any labels that already exist (ignore duplicate errors).
 
-Both CLIs use per-repo label creation. Skip any labels that already exist (ignore duplicate errors).
-
-**Gitea:**
-```bash
-tea label create --name "approved" --color "#0e8a16" --description "Proposal approved — ready for planning" --repo "$ORG/bridge"
-tea label create --name "build-ready" --color "#1d76db" --description "Ready for Builder" --repo "$ORG/bridge"
-tea label create --name "deploy-ready" --color "#5319e7" --description "Ready for Deployer" --repo "$ORG/bridge"
-tea label create --name "needs-input" --color "#e4e669" --description "Agent blocked — Captain decision needed" --repo "$ORG/bridge"
-tea label create --name "live" --color "#0e8a16" --description "Deployed to production" --repo "$ORG/bridge"
-tea label create --name "team/scout" --color "#c5def5" --repo "$ORG/bridge"
-tea label create --name "team/build" --color "#c5def5" --repo "$ORG/bridge"
-tea label create --name "team/ops" --color "#c5def5" --repo "$ORG/bridge"
-tea label create --name "team/growth" --color "#c5def5" --repo "$ORG/bridge"
-tea label create --name "priority/p0" --color "#b60205" --description "Critical" --repo "$ORG/bridge"
-tea label create --name "priority/p1" --color "#d93f0b" --description "High" --repo "$ORG/bridge"
-tea label create --name "priority/p2" --color "#fbca04" --description "Normal" --repo "$ORG/bridge"
-tea label create --name "size/small" --color "#c2e0c6" --repo "$ORG/bridge"
-tea label create --name "size/medium" --color "#c2e0c6" --repo "$ORG/bridge"
-tea label create --name "size/large" --color "#c2e0c6" --repo "$ORG/bridge"
-tea label create --name "status/blocked" --color "#e4e669" --repo "$ORG/bridge"
-tea label create --name "status/waiting" --color "#e4e669" --repo "$ORG/bridge"
-tea label create --name "status/active" --color "#0e8a16" --repo "$ORG/bridge"
-tea label create --name "type/proposal" --color "#d4c5f9" --repo "$ORG/bridge"
-tea label create --name "type/feature" --color "#d4c5f9" --repo "$ORG/bridge"
-tea label create --name "type/bug" --color "#d4c5f9" --repo "$ORG/bridge"
-tea label create --name "type/deploy" --color "#d4c5f9" --repo "$ORG/bridge"
-```
-
-**GitHub:**
 ```bash
 gh label create "approved" --repo "$ORG/bridge" --color "0e8a16" --description "Proposal approved"
 gh label create "build-ready" --repo "$ORG/bridge" --color "1d76db" --description "Ready for Builder"
@@ -198,8 +145,9 @@ git push origin main
 
 List all repos in the org (excluding the bridge itself and any forks):
 
-- **GitHub:** `gh repo list $ORG --json name,description,isFork --limit 100 --no-archived`
-- **Gitea:** `tea repos list --owner "$ORG" --output simple`
+```bash
+gh repo list $ORG --json name,description,isFork --limit 100 --no-archived
+```
 
 Filter out:
 - The bridge repo itself
@@ -216,22 +164,16 @@ For each selected repo:
 1. **Clone to temp directory:**
    ```bash
    cd "$WORK_DIR"
-   # GitHub
    gh repo clone "$ORG/$REPO" "$REPO"
-   # Gitea
-   tea repos clone "$ORG/$REPO"
    cd "$REPO"
    ```
 
 2. **Copy project template files** (skip any that already exist — ask before overwriting):
    ```bash
-   # Workflows — use platform-specific templates
+   WORKFLOW_DIR=".github/workflows"
+
    mkdir -p "$WORKFLOW_DIR"
-   if [[ "$PLATFORM" == "gitea" ]]; then
-     cp -r "$PLUGIN_ROOT/templates/project/.gitea/workflows/"* "$WORKFLOW_DIR/"
-   else
-     cp -r "$PLUGIN_ROOT/templates/project/.github/workflows/"* "$WORKFLOW_DIR/"
-   fi
+   cp -r "$PLUGIN_ROOT/templates/project/.github/workflows/"* "$WORKFLOW_DIR/"
 
    # Lib scripts
    mkdir -p lib
@@ -244,7 +186,7 @@ For each selected repo:
 
 3. **Do NOT overwrite existing CLAUDE.md** — if one exists, leave it. If none exists, copy the project template and tell the user to fill in the placeholders.
 
-4. **Create the same labels on this repo** (needed for both platforms — GitHub has no org-level labels, and per-repo labels ensure consistency on Gitea too).
+4. **Create the same labels on this repo** (GitHub has no org-level labels, so per-repo labels ensure consistency).
 
 5. **Commit and push:**
    ```bash
@@ -257,17 +199,14 @@ For each selected repo:
 
 If the user has a runner (self-hosted or planned), tell them which secrets to configure:
 
-**Gitea:** `tea actions secrets create --name SECRET_NAME --value "value" --repo "$ORG/bridge"`
-**GitHub:** `gh secret set SECRET_NAME --repo "$ORG/bridge"`
+```bash
+gh secret set SECRET_NAME --repo "$ORG/bridge"
+```
 
 | Secret | Value | Notes |
 |--------|-------|-------|
-| `NTFY_URL` | e.g. `https://ntfy.sh` | Where notifications go |
-| `NTFY_TOKEN` | ntfy auth token | Optional (public ntfy.sh doesn't need it) |
 | `SEAMONSTER_ORG` | The org name | Used by workflow scripts |
 | `SEAMONSTER_DOMAIN` | e.g. `example.com` | For deploy workflows |
-| `GITEA_URL` | e.g. `https://git.example.com` | Gitea only |
-| `GITEA_TOKEN` | Gitea API token | Gitea only |
 
 `GITHUB_TOKEN` is provided automatically by GitHub Actions — no setup needed.
 
@@ -279,10 +218,8 @@ If the user has no runner, skip this step. Secrets are only needed for automated
 Sea Monster initialized!
 
   Bridge:     $ORG/bridge
-  Platform:   $PLATFORM ($GIT_CLI)
   Onboarded:  N repos
   Labels:     Created on bridge + onboarded repos
-  ntfy:       $NTFY_URL
 
 Next steps:
   1. File issues in the bridge repo — use issue templates
