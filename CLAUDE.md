@@ -17,7 +17,7 @@ Sea Monster is an autonomous AI crew that builds, ships, and markets software 24
 ### Key Decisions
 
 - **Distribution:** Free core in public marketplace, paid packs in private marketplace repos
-- **Deployment tiers:** Lite (GitHub + laptop), Solo (GitHub + VPS), Sovereign (Typhon)
+- **Deployment tiers:** Lite (plugin only, manual triggers), Solo (GitHub + VPS runner), Sovereign (Gitea + VPS via Typhon)
 - **Bridge:** Coordination repo created by `/seamonster:init` — Captain's single point of contact
 - **Auth:** Claude Pro/Max subscription (not API keys)
 - **Competitive position:** Sea Monster = business-focused 24/7 autonomy via git state machine
@@ -82,3 +82,5 @@ seamonster-software/claude-plugins/
 - Agent descriptions must include specific trigger patterns, not vague summaries
 - Workflows use repo-relative paths (`./lib/`) — no SEAMONSTER_ROOT env var
 - Templates exist for both Gitea Actions and GitHub Actions
+- `/seamonster:init` uses `tea` CLI (Gitea) or `gh` CLI (GitHub) — no raw curl in commands
+- Tier names are internal — init never asks users about tiers, just detects platform + ntfy preference

@@ -12,27 +12,37 @@ This is the one-time onboarding command. It creates the bridge (coordination rep
 
 Before running this command, the user needs:
 - A git org (GitHub or Gitea) where repos will live
-- `gh` CLI authenticated (GitHub) OR `GITEA_URL` + `GITEA_TOKEN` env vars (Gitea)
+- `tea` CLI authenticated (Gitea) OR `gh` CLI authenticated (GitHub)
 - `jq` installed
 
 ## Step 1: Detect Platform
 
-Determine whether the user is on GitHub or Gitea:
+Determine whether the user is on GitHub or Gitea by checking for CLI tools:
 
 ```bash
-# Check for Gitea env vars first
-if [[ -n "${GITEA_URL:-}" && -n "${GITEA_TOKEN:-}" ]]; then
+# Check for tea (Gitea) first, then gh (GitHub)
+if command -v tea &>/dev/null && tea login list 2>/dev/null | grep -q .; then
   PLATFORM="gitea"
+  GIT_CLI="tea"
   WORKFLOW_DIR=".gitea/workflows"
+  GITEA_URL=$(tea login list --output simple 2>/dev/null | head -1 | awk '{print $2}')
 elif command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
   PLATFORM="github"
+  GIT_CLI="gh"
   WORKFLOW_DIR=".github/workflows"
 else
-  # Ask the user
+  # Ask the user which platform they're using
 fi
 ```
 
-If neither is detected, ask the user which platform they're using and what credentials they have. Do NOT proceed without a working platform connection.
+If neither CLI is detected, ask the user which platform they're using and help them authenticate:
+- **Gitea:** `tea login add --name <name> --url <gitea-url> --token <token>`
+- **GitHub:** `gh auth login`
+
+Do NOT proceed without a working platform connection.
+
+After detection, **confirm with the user** before proceeding:
+> Detected **$PLATFORM** via `$GIT_CLI`. Is this correct? (use AskUserQuestion)
 
 ## Step 2: Gather Configuration
 
@@ -41,12 +51,11 @@ Ask the user for these values (use AskUserQuestion for each):
 | Value | Question | Default | Required |
 |-------|----------|---------|----------|
 | `ORG` | What's your git org/owner name? | — | Yes |
-| `NTFY_URL` | ntfy server URL? | `https://ntfy.sh` | Yes |
-| `DOMAIN` | Domain for deployed services? | — | For Sovereign tier |
+| `NTFY_URL` | ntfy server URL? (leave blank for ntfy.sh) | `https://ntfy.sh` | No |
 
 Validate the org exists:
 - **GitHub:** `gh api /orgs/$ORG` or `gh api /users/$ORG`
-- **Gitea:** `curl -fsSL -H "Authorization: token $GITEA_TOKEN" "$GITEA_URL/api/v1/orgs/$ORG"`
+- **Gitea:** `tea organizations list 2>/dev/null | grep -q "$ORG"` or `tea repos list --owner "$ORG"`
 
 ## Step 3: Locate Plugin Templates
 
@@ -70,13 +79,16 @@ Check if a `bridge` repo already exists in the org. If it does, ask the user if 
 
 Create the repo:
 - **GitHub:** `gh repo create $ORG/bridge --public --description "Sea Monster Bridge — Captain's command center" --clone`
-- **Gitea:** Use the gitea_create_repo function from lib/gitea-api.sh (or `sm_create_repo` from git-api.sh), then clone it
+- **Gitea:** `tea repos create --name bridge --owner "$ORG" --description "Sea Monster Bridge — Captain's command center"`, then clone it
 
 Clone the new repo to a temp directory:
 ```bash
 WORK_DIR=$(mktemp -d)
 cd "$WORK_DIR"
-git clone <repo_url> bridge
+# GitHub
+gh repo clone "$ORG/bridge" bridge
+# Gitea
+tea repos clone "$ORG/bridge"
 cd bridge
 ```
 
@@ -115,56 +127,63 @@ cp "$PLUGIN_ROOT/templates/bridge/CLAUDE.md" ./CLAUDE.md
 echo ".seamonster/" >> .gitignore
 ```
 
-## Step 6: Create Org-Level Labels
+## Step 6: Create Labels
 
 Create the scoped labels that drive the issue state machine.
 
-**For Gitea** (org-level labels — source `./lib/gitea-api.sh` or `./lib/git-api.sh`):
+Both CLIs use per-repo label creation. Skip any labels that already exist (ignore duplicate errors).
+
+**Gitea:**
 ```bash
-# State labels
-sm_post "/orgs/$ORG/labels" '{"name":"approved","color":"#0e8a16","description":"Proposal approved — ready for planning"}'
-sm_post "/orgs/$ORG/labels" '{"name":"build-ready","color":"#1d76db","description":"Ready for Builder"}'
-sm_post "/orgs/$ORG/labels" '{"name":"deploy-ready","color":"#5319e7","description":"Ready for Deployer"}'
-sm_post "/orgs/$ORG/labels" '{"name":"needs-input","color":"#e4e669","description":"Agent blocked — Captain decision needed"}'
-sm_post "/orgs/$ORG/labels" '{"name":"live","color":"#0e8a16","description":"Deployed to production"}'
-
-# Team labels
-sm_post "/orgs/$ORG/labels" '{"name":"team/scout","color":"#c5def5"}'
-sm_post "/orgs/$ORG/labels" '{"name":"team/build","color":"#c5def5"}'
-sm_post "/orgs/$ORG/labels" '{"name":"team/ops","color":"#c5def5"}'
-sm_post "/orgs/$ORG/labels" '{"name":"team/growth","color":"#c5def5"}'
-
-# Priority labels
-sm_post "/orgs/$ORG/labels" '{"name":"priority/p0","color":"#b60205","description":"Critical"}'
-sm_post "/orgs/$ORG/labels" '{"name":"priority/p1","color":"#d93f0b","description":"High"}'
-sm_post "/orgs/$ORG/labels" '{"name":"priority/p2","color":"#fbca04","description":"Normal"}'
-
-# Size labels
-sm_post "/orgs/$ORG/labels" '{"name":"size/small","color":"#c2e0c6"}'
-sm_post "/orgs/$ORG/labels" '{"name":"size/medium","color":"#c2e0c6"}'
-sm_post "/orgs/$ORG/labels" '{"name":"size/large","color":"#c2e0c6"}'
-
-# Status labels
-sm_post "/orgs/$ORG/labels" '{"name":"status/blocked","color":"#e4e669"}'
-sm_post "/orgs/$ORG/labels" '{"name":"status/waiting","color":"#e4e669"}'
-sm_post "/orgs/$ORG/labels" '{"name":"status/active","color":"#0e8a16"}'
-
-# Type labels
-sm_post "/orgs/$ORG/labels" '{"name":"type/proposal","color":"#d4c5f9"}'
-sm_post "/orgs/$ORG/labels" '{"name":"type/feature","color":"#d4c5f9"}'
-sm_post "/orgs/$ORG/labels" '{"name":"type/bug","color":"#d4c5f9"}'
-sm_post "/orgs/$ORG/labels" '{"name":"type/deploy","color":"#d4c5f9"}'
+tea label create --name "approved" --color "#0e8a16" --description "Proposal approved — ready for planning" --repo "$ORG/bridge"
+tea label create --name "build-ready" --color "#1d76db" --description "Ready for Builder" --repo "$ORG/bridge"
+tea label create --name "deploy-ready" --color "#5319e7" --description "Ready for Deployer" --repo "$ORG/bridge"
+tea label create --name "needs-input" --color "#e4e669" --description "Agent blocked — Captain decision needed" --repo "$ORG/bridge"
+tea label create --name "live" --color "#0e8a16" --description "Deployed to production" --repo "$ORG/bridge"
+tea label create --name "team/scout" --color "#c5def5" --repo "$ORG/bridge"
+tea label create --name "team/build" --color "#c5def5" --repo "$ORG/bridge"
+tea label create --name "team/ops" --color "#c5def5" --repo "$ORG/bridge"
+tea label create --name "team/growth" --color "#c5def5" --repo "$ORG/bridge"
+tea label create --name "priority/p0" --color "#b60205" --description "Critical" --repo "$ORG/bridge"
+tea label create --name "priority/p1" --color "#d93f0b" --description "High" --repo "$ORG/bridge"
+tea label create --name "priority/p2" --color "#fbca04" --description "Normal" --repo "$ORG/bridge"
+tea label create --name "size/small" --color "#c2e0c6" --repo "$ORG/bridge"
+tea label create --name "size/medium" --color "#c2e0c6" --repo "$ORG/bridge"
+tea label create --name "size/large" --color "#c2e0c6" --repo "$ORG/bridge"
+tea label create --name "status/blocked" --color "#e4e669" --repo "$ORG/bridge"
+tea label create --name "status/waiting" --color "#e4e669" --repo "$ORG/bridge"
+tea label create --name "status/active" --color "#0e8a16" --repo "$ORG/bridge"
+tea label create --name "type/proposal" --color "#d4c5f9" --repo "$ORG/bridge"
+tea label create --name "type/feature" --color "#d4c5f9" --repo "$ORG/bridge"
+tea label create --name "type/bug" --color "#d4c5f9" --repo "$ORG/bridge"
+tea label create --name "type/deploy" --color "#d4c5f9" --repo "$ORG/bridge"
 ```
 
-**For GitHub** (per-repo labels — GitHub doesn't support org-level labels):
+**GitHub:**
 ```bash
-# Create labels on the bridge repo, and later on each onboarded repo
 gh label create "approved" --repo "$ORG/bridge" --color "0e8a16" --description "Proposal approved"
 gh label create "build-ready" --repo "$ORG/bridge" --color "1d76db" --description "Ready for Builder"
-# ... (same set of labels)
+gh label create "deploy-ready" --repo "$ORG/bridge" --color "5319e7" --description "Ready for Deployer"
+gh label create "needs-input" --repo "$ORG/bridge" --color "e4e669" --description "Agent blocked — Captain decision needed"
+gh label create "live" --repo "$ORG/bridge" --color "0e8a16" --description "Deployed to production"
+gh label create "team/scout" --repo "$ORG/bridge" --color "c5def5"
+gh label create "team/build" --repo "$ORG/bridge" --color "c5def5"
+gh label create "team/ops" --repo "$ORG/bridge" --color "c5def5"
+gh label create "team/growth" --repo "$ORG/bridge" --color "c5def5"
+gh label create "priority/p0" --repo "$ORG/bridge" --color "b60205" --description "Critical"
+gh label create "priority/p1" --repo "$ORG/bridge" --color "d93f0b" --description "High"
+gh label create "priority/p2" --repo "$ORG/bridge" --color "fbca04" --description "Normal"
+gh label create "size/small" --repo "$ORG/bridge" --color "c2e0c6"
+gh label create "size/medium" --repo "$ORG/bridge" --color "c2e0c6"
+gh label create "size/large" --repo "$ORG/bridge" --color "c2e0c6"
+gh label create "status/blocked" --repo "$ORG/bridge" --color "e4e669"
+gh label create "status/waiting" --repo "$ORG/bridge" --color "e4e669"
+gh label create "status/active" --repo "$ORG/bridge" --color "0e8a16"
+gh label create "type/proposal" --repo "$ORG/bridge" --color "d4c5f9"
+gh label create "type/feature" --repo "$ORG/bridge" --color "d4c5f9"
+gh label create "type/bug" --repo "$ORG/bridge" --color "d4c5f9"
+gh label create "type/deploy" --repo "$ORG/bridge" --color "d4c5f9"
 ```
-
-Skip any labels that already exist (both APIs return errors for duplicates — ignore them).
 
 ## Step 7: Commit and Push the Bridge
 
@@ -180,7 +199,7 @@ git push origin main
 List all repos in the org (excluding the bridge itself and any forks):
 
 - **GitHub:** `gh repo list $ORG --json name,description,isFork --limit 100 --no-archived`
-- **Gitea:** `curl ... "$GITEA_URL/api/v1/orgs/$ORG/repos?limit=50&type=sources"`
+- **Gitea:** `tea repos list --owner "$ORG" --output simple`
 
 Filter out:
 - The bridge repo itself
@@ -197,15 +216,22 @@ For each selected repo:
 1. **Clone to temp directory:**
    ```bash
    cd "$WORK_DIR"
-   git clone <repo_url> <repo_name>
-   cd <repo_name>
+   # GitHub
+   gh repo clone "$ORG/$REPO" "$REPO"
+   # Gitea
+   tea repos clone "$ORG/$REPO"
+   cd "$REPO"
    ```
 
 2. **Copy project template files** (skip any that already exist — ask before overwriting):
    ```bash
-   # Workflows
+   # Workflows — use platform-specific templates
    mkdir -p "$WORKFLOW_DIR"
-   cp -r "$PLUGIN_ROOT/templates/project/.gitea/workflows/"* "$WORKFLOW_DIR/" 2>/dev/null || true
+   if [[ "$PLATFORM" == "gitea" ]]; then
+     cp -r "$PLUGIN_ROOT/templates/project/.gitea/workflows/"* "$WORKFLOW_DIR/"
+   else
+     cp -r "$PLUGIN_ROOT/templates/project/.github/workflows/"* "$WORKFLOW_DIR/"
+   fi
 
    # Lib scripts
    mkdir -p lib
@@ -218,7 +244,7 @@ For each selected repo:
 
 3. **Do NOT overwrite existing CLAUDE.md** — if one exists, leave it. If none exists, copy the project template and tell the user to fill in the placeholders.
 
-4. **For GitHub repos, create the same labels** (per-repo, since GitHub has no org-level labels).
+4. **Create the same labels on this repo** (needed for both platforms — GitHub has no org-level labels, and per-repo labels ensure consistency on Gitea too).
 
 5. **Commit and push:**
    ```bash
@@ -229,40 +255,40 @@ For each selected repo:
 
 ## Step 10: Configure Secrets
 
-Tell the user which secrets to configure. The method depends on platform:
+If the user has a runner (self-hosted or planned), tell them which secrets to configure:
 
-**Gitea:** Repository or org-level secrets in Settings → Actions → Secrets
-**GitHub:** `gh secret set` or Settings → Secrets
-
-Required secrets (set at org level if possible, otherwise per-repo):
+**Gitea:** `tea actions secrets create --name SECRET_NAME --value "value" --repo "$ORG/bridge"`
+**GitHub:** `gh secret set SECRET_NAME --repo "$ORG/bridge"`
 
 | Secret | Value | Notes |
 |--------|-------|-------|
+| `NTFY_URL` | e.g. `https://ntfy.sh` | Where notifications go |
+| `NTFY_TOKEN` | ntfy auth token | Optional (public ntfy.sh doesn't need it) |
+| `SEAMONSTER_ORG` | The org name | Used by workflow scripts |
+| `SEAMONSTER_DOMAIN` | e.g. `example.com` | For deploy workflows |
 | `GITEA_URL` | e.g. `https://git.example.com` | Gitea only |
 | `GITEA_TOKEN` | Gitea API token | Gitea only |
-| `GITHUB_TOKEN` | (automatic) | GitHub provides this |
-| `NTFY_URL` | e.g. `https://ntfy.sh` | All tiers |
-| `NTFY_TOKEN` | ntfy auth token | Optional (public ntfy.sh doesn't need it) |
-| `SEAMONSTER_ORG` | The org name | All tiers |
-| `SEAMONSTER_DOMAIN` | e.g. `seamonster.software` | For deploy workflows |
+
+`GITHUB_TOKEN` is provided automatically by GitHub Actions — no setup needed.
+
+If the user has no runner, skip this step. Secrets are only needed for automated workflows.
 
 ## Step 11: Print Summary
-
-Print a summary of what was done:
 
 ```
 Sea Monster initialized!
 
   Bridge:     $ORG/bridge
-  Platform:   $PLATFORM
+  Platform:   $PLATFORM ($GIT_CLI)
   Onboarded:  N repos
-  Labels:     Created (org-level / per-repo)
+  Labels:     Created on bridge + onboarded repos
+  ntfy:       $NTFY_URL
 
 Next steps:
-  1. Configure secrets (see above)
-  2. Set up act_runner (connects to your $PLATFORM org)
-  3. Authenticate Claude: ssh into the runner machine, run 'claude'
-  4. File your first issue in the bridge — the crew handles the rest
+  1. File issues in the bridge repo — use issue templates
+  2. Run /seamonster:orders to check for work
+  3. Run /seamonster:spawn to assign agents to issues
+  4. For 24/7 autonomy, set up a runner on a VPS and configure secrets
 
 Bridge URL: <url>
 ```

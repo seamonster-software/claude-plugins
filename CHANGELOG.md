@@ -7,6 +7,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- `README.md` — project overview, install instructions, tier descriptions, architecture
+- `TODO.md` — tracked backlog (phase 2 remaining, agents, decisions, improvements)
 - `git-api.sh` — unified platform-agnostic git API (`sm_*` functions)
   - Auto-detects Gitea vs GitHub from environment variables
   - Normalizes labels (always use names, Gitea ID resolution handled internally)
@@ -18,6 +20,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - GitHub issue templates for bridge repos (mirroring Gitea templates)
 
 ### Changed
+- `/seamonster:init` now uses `tea` CLI (Gitea) and `gh` CLI (GitHub) symmetrically — no raw curl
+- `/seamonster:init` no longer mentions deployment tiers — detects platform and ntfy preference instead
+- `/seamonster:init` confirms detected platform with user before proceeding
+- `/seamonster:init` secrets step is conditional — skipped when no runner is configured
 - All agents now source `git-api.sh` and use `sm_*` functions (platform-agnostic)
 - All commands (crew-status, orders, voyage, spawn) consolidated from dual Gitea/GitHub examples to unified API
 - Skills (contract-patterns, escalation-protocol) updated to use `sm_*` functions
