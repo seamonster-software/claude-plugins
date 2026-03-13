@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # git-api.sh — Unified git platform API for Sea Monster agents
-# Sources the correct backend (Gitea or GitHub) based on environment variables.
+# Sources the correct backend (Gitea or GitHub) based on environment variables
+# or CLI tools (gh/tea).
 # All sm_* functions work identically regardless of platform.
 #
-# Platform detection:
-#   GITEA_URL set    → Gitea backend (requires GITEA_TOKEN)
-#   GITHUB_TOKEN set → GitHub backend
+# Platform detection (in order):
+#   GITEA_URL set              → Gitea backend via curl (requires GITEA_TOKEN)
+#   GITHUB_TOKEN set           → GitHub backend via curl
+#   gh CLI authenticated       → GitHub backend via gh api
+#   tea CLI authenticated      → Gitea backend via tea
 #
 # Label normalization:
 #   All sm_* label functions accept label NAMES (strings).
@@ -15,19 +18,46 @@ set -euo pipefail
 
 # --- Platform Detection ---
 
+SM_API_MODE=""  # "token" (curl + env var) or "cli" (gh/tea)
+
 if [[ -n "${GITEA_URL:-}" ]]; then
   SM_PLATFORM="gitea"
+  SM_API_MODE="token"
 elif [[ -n "${GITHUB_TOKEN:-}" ]]; then
   SM_PLATFORM="github"
+  SM_API_MODE="token"
+elif command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
+  SM_PLATFORM="github"
+  SM_API_MODE="cli"
+  # Extract token from gh for curl-based backends
+  GITHUB_TOKEN="$(gh auth token 2>/dev/null)" || true
+  if [[ -n "$GITHUB_TOKEN" ]]; then
+    SM_API_MODE="token"
+    export GITHUB_TOKEN
+  fi
+elif command -v tea &>/dev/null && tea login list 2>/dev/null | grep -q .; then
+  SM_PLATFORM="gitea"
+  SM_API_MODE="cli"
+  GITEA_URL="$(tea login list --output simple 2>/dev/null | head -1 | awk '{print $2}')" || true
+  GITEA_TOKEN="$(tea login list --output simple 2>/dev/null | head -1 | awk '{print $3}')" || true
+  if [[ -n "$GITEA_URL" && -n "$GITEA_TOKEN" ]]; then
+    SM_API_MODE="token"
+    export GITEA_URL GITEA_TOKEN
+  fi
 else
-  echo "ERROR: Neither GITEA_URL nor GITHUB_TOKEN is set" >&2
-  echo "Set GITEA_URL + GITEA_TOKEN for Gitea, or GITHUB_TOKEN for GitHub." >&2
+  echo "ERROR: No git platform configured." >&2
+  echo "Options:" >&2
+  echo "  - Set GITHUB_TOKEN for GitHub" >&2
+  echo "  - Set GITEA_URL + GITEA_TOKEN for Gitea" >&2
+  echo "  - Authenticate gh CLI: gh auth login" >&2
+  echo "  - Authenticate tea CLI: tea login add" >&2
   exit 1
 fi
-export SM_PLATFORM
+export SM_PLATFORM SM_API_MODE
 
 # Source the platform-specific backend
-_SM_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Works in both bash and zsh
+_SM_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-${(%):-%x}}")" && pwd)"
 # shellcheck source=./gitea-api.sh
 # shellcheck source=./github-api.sh
 source "${_SM_LIB_DIR}/${SM_PLATFORM}-api.sh"
