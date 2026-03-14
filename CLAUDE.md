@@ -55,32 +55,24 @@ seamonster-software/claude-plugins/
 │   │   └── voyage.md
 │   ├── hooks/
 │   │   └── hooks.json
-│   ├── lib/                            # Shell helpers (copied into user repos by init)
-│   │   ├── git-api.sh                  # Unified API — sources github-api.sh, provides sm_* functions
-│   │   ├── github-api.sh              # GitHub backend (sourced by git-api.sh)
+│   ├── lib/                            # LEGACY — remove in Wave 5
+│   │   ├── git-api.sh                  # Was: sm_* functions (replaced by file-based ops)
+│   │   ├── github-api.sh              # Was: GitHub backend
 │   │   └── claude-runner.sh
-│   └── templates/                      # Repo templates (copied by init)
-│       ├── bridge/                     # Bridge repo template
-│       │   ├── .github/workflows/
-│       │   ├── .github/ISSUE_TEMPLATE/
-│       │   └── CLAUDE.md
-│       └── project/                    # Project repo template
-│           ├── .github/workflows/
-│           └── CLAUDE.md
+│   └── templates/                      # LEGACY — remove in Wave 5
+│       ├── bridge/                     # Was: bridge repo template
+│       └── project/                    # Was: project repo template
 ```
 
 ## Conventions
 
 - Shell scripts: `set -euo pipefail`, idempotent, color output
-- Agent prompts use `source ./lib/git-api.sh` for git operations
-- `git-api.sh` sources `github-api.sh` and provides `sm_*` wrapper functions
-- Auth: `GITHUB_TOKEN` env var, or falls back to `gh auth token`
-- All agent actions post comments on git issues (audit trail)
-- Agents never stall silently — escalate via GitHub labels + notifications
-- Reviewer is always read-only (no Edit/Write tools)
+- Agents read/write `.bridge/orders/*.md` files — no GitHub API calls for coordination
+- Order files use YAML frontmatter for status, assignee, priority; markdown body for spec and log
+- Audit trail: agents append to `## Work Log` section in the order file, not GitHub comments
+- Escalation: agents write `## Blocker` section, set `status: needs-input`, send ntfy notification
+- Reviewer is always read-only (no Edit/Write tools) but merges approved PRs and runs `semantic-release`
 - Agent descriptions must include specific trigger patterns, not vague summaries
-- Workflows use repo-relative paths (`./lib/`) — no SEAMONSTER_ROOT env var
-- `/x:init` uses `gh` CLI — no raw curl in commands
 - Plugin typeahead requires auto-discovery — no `name` field in command frontmatter, no component arrays in plugin.json
 - Agent frontmatter SHOULD have `name` field; command frontmatter should NOT (agents use name for display, commands use filename)
 - When dispatching multiple builders to same repo, use `isolation: "worktree"` to avoid branch collisions
