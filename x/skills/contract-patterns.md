@@ -23,8 +23,8 @@ then enforced during build and review.
 
 ## Contract Format
 
-Store contracts as a section in the issue body or as a dedicated
-issue comment. Use this template:
+Store contracts as a section in the order body or as a dedicated
+section in the order file. Use this template:
 
 ```markdown
 ## Contract: Wave {N} — {Name}
@@ -54,7 +54,7 @@ issue comment. Use this template:
 **May NOT modify:**
 - `src/db/*` (owned by Wave 1)
 - `src/routes/*` (owned by Wave 3)
-- `package.json` (coordinate additions via issue comment)
+- `package.json` (coordinate additions via order file comment)
 
 ### Acceptance Criteria
 - [ ] All exported functions match signatures above
@@ -81,42 +81,47 @@ Wave 1 (parallel)          Wave 2 (parallel)         Wave 3 (sequential)
 
 ### Planning Waves
 
-The Planner creates the wave plan. Each wave becomes a milestone.
-Each task within a wave becomes an issue linked to that milestone.
+The Planner creates the wave plan. Each wave becomes a group of order files.
+Each task within a wave becomes an order file in `.bridge/orders/`.
 
 ```bash
-source ./lib/git-api.sh
+# Create order files for each wave's tasks
+# Wave 1: Foundation (independent, can run in parallel)
+# Wave 2: Services (depends on Wave 1 outputs)
+# Wave 3: Integration (depends on Wave 2 outputs)
 
-# Create milestones for each wave
-sm_create_milestone "$SEAMONSTER_ORG" "project-alpha" \
-  "Wave 1: Foundation" \
-  "Database schema, type definitions, config"
-
-sm_create_milestone "$SEAMONSTER_ORG" "project-alpha" \
-  "Wave 2: Services" \
-  "Auth, user, email services. Depends on Wave 1."
-
-sm_create_milestone "$SEAMONSTER_ORG" "project-alpha" \
-  "Wave 3: Integration" \
-  "API routes, integration tests. Depends on Wave 2."
+# Each order file's frontmatter includes the wave number:
+# wave: 1
+# depends_on: []
+#
+# Wave dependencies are tracked in each order's body:
+# ## Dependencies
+# Depends on: order #001 (database schema)
+# Blocks: order #004 (API routes)
 ```
 
 ### Executing Waves
 
-Within a wave, independent tasks run in parallel — separate issues, separate
+Within a wave, independent tasks run in parallel — separate orders, separate
 branches, separate Builder sessions. The Builder can spawn sub-agents
 for this.
 
-Between waves, wait for all tasks in the current wave to complete (milestone
-100%) before starting the next wave. The dispatch workflow checks milestone
-completion:
+Between waves, wait for all tasks in the current wave to complete before
+starting the next wave. The `/x:work` command checks wave completion by
+scanning order files:
 
 ```bash
-# Check if Wave 1 milestone is complete
-milestone_json=$(sm_get "/repos/${SEAMONSTER_ORG}/project-alpha/milestones" | \
-  jq '.[] | select(.title == "Wave 1: Foundation")')
-open=$(echo "$milestone_json" | jq '.open_issues')
-if [[ "$open" -eq 0 ]]; then
+# Check if all Wave 1 orders are done
+WAVE1_OPEN=0
+for order in .bridge/orders/*.md; do
+  wave=$(grep -m1 '^wave:' "$order" 2>/dev/null | awk '{print $2}')
+  status=$(grep -m1 '^status:' "$order" 2>/dev/null | awk '{print $2}')
+  if [[ "$wave" == "1" && "$status" != "done" ]]; then
+    WAVE1_OPEN=$((WAVE1_OPEN + 1))
+  fi
+done
+
+if [[ "$WAVE1_OPEN" -eq 0 ]]; then
   echo "Wave 1 complete — ready for Wave 2"
 fi
 ```
@@ -132,28 +137,27 @@ file. Contracts prevent this.
 2. An agent may only create or modify files listed in its contract's "May create" section.
 3. Shared files (like `package.json`, `go.mod`, root config) are coordinated:
    - One wave owns the file
-   - Other waves request additions via issue comments
+   - Other waves request additions via notes in the owning wave's order file
    - The owning wave's agent applies changes
 4. If two waves need to modify the same file, the contract is wrong — refactor it.
 
 ### Example: Shared Dependency
 
-Wave 2 needs a new npm package that Wave 1 owns `package.json`:
+Wave 2 needs a new npm package that Wave 1 owns `package.json`. The Wave 2
+Builder writes a dependency request to the Wave 1 order file's `## Work Log`:
 
-```bash
-# Wave 2 Builder posts a comment on Wave 1's issue
-sm_comment "$SEAMONSTER_ORG" "project-alpha" "$WAVE1_ISSUE" \
-  "**Builder** [Wave 2] — dependency request:
+```markdown
+### Builder [Wave 2] -- dependency request (2026-03-13)
 
-Need \`jsonwebtoken@^9.0.0\` added to package.json for the auth service.
+Need `jsonwebtoken@^9.0.0` added to package.json for the auth service.
 
-\`\`\`
+```
 npm install jsonwebtoken@^9.0.0
-\`\`\`"
+```
 ```
 
-If Wave 1 is already complete, the dependency addition becomes a new issue
-assigned to the original wave owner.
+If Wave 1 is already complete, the dependency addition becomes a new order
+file assigned to the original wave owner.
 
 ## Builder-Validator Pairing
 
@@ -178,8 +182,8 @@ files:
 - Ownership boundaries are violated
 
 The Reviewer has restricted tools: Read, Glob, Grep, and read-only Bash
-commands (git diff, git log, git show). The `claude-runner.sh` wrapper
-enforces this via `CLAUDE_ALLOWED_TOOLS`.
+commands (git diff, git log, git show). The agent definition enforces this
+via the `tools` list in the frontmatter.
 
 ### Contract Validation Checklist
 
@@ -215,14 +219,14 @@ The Reviewer verifies each contract item:
 Contracts may need to change during build. The protocol:
 
 1. The Builder discovers the contract needs adjustment
-2. Posts a comment on the wave issue explaining the proposed change
+2. Writes a note to the wave's order file explaining the proposed change
 3. Checks if other waves depend on the affected interface
-4. If no downstream dependencies are affected: update the contract in the issue
+4. If no downstream dependencies are affected: update the contract in the order file
 5. If downstream dependencies are affected: escalate to the Planner to
-   re-plan, and notify affected agents via issue comments
+   re-plan, and note the change in all affected order files
 
 Never silently change a contract. The change must be visible in the
-issue history.
+order file's `## Work Log`.
 
 ## Minimal Contracts
 
@@ -233,7 +237,7 @@ Not every task needs a full contract. Use contracts when:
 - The feature is complex enough to warrant parallel work
 
 For simple, isolated tasks (fix a typo, update docs, add a single endpoint),
-the issue description and acceptance criteria are sufficient.
+the order description and acceptance criteria are sufficient.
 
 ## Anti-Patterns
 
@@ -242,6 +246,6 @@ the issue description and acceptance criteria are sufficient.
 | No contract, just "build the auth" | Vague scope, wrong interfaces | Write the contract first |
 | Two agents edit same file | Merge conflicts, lost work | Enforce file ownership |
 | Contract says X, builder delivers Y | Integration failure | Reviewer validates against contract |
-| Changing contracts without notification | Downstream agents break | Comment on issue, notify affected waves |
+| Changing contracts without notification | Downstream agents break | Write change note in affected order files |
 | Giant single wave | No parallelism, slow | Split into independent sub-tasks |
 | Reviewer fixes code | Broken audit trail | Reviewer is read-only, always |

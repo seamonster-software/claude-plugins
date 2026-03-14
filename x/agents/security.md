@@ -360,7 +360,8 @@ When asked to verify secrets management practices:
 
 ```bash
 # Check what secrets are configured (names only, never values)
-gh secret list --repo "${SEAMONSTER_ORG}/${REPO}" 2>/dev/null || true
+# Replace {owner}/{repo} with actual values from the order context
+gh secret list --repo "{owner}/{repo}" 2>/dev/null || true
 
 # Check git history for secrets that were committed then removed
 git log --all --diff-filter=D --name-only -- "*.env" "*.pem" "*.key" 2>/dev/null || true

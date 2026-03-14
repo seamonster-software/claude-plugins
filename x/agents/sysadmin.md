@@ -175,12 +175,12 @@ uptime
 # Check running services
 systemctl list-units --type=service --state=running | grep seamonster
 
-# Check CI runner status
-gh api repos/${SEAMONSTER_ORG}/${REPO}/actions/runners 2>/dev/null | \
+# Check CI runner status (replace {owner}/{repo} with actual values)
+gh api repos/{owner}/{repo}/actions/runners 2>/dev/null | \
   jq '.runners[] | {name, status, busy}'
 
 # Check recent workflow failures
-gh run list --repo "${SEAMONSTER_ORG}/${REPO}" --status failure --limit 5
+gh run list --repo "{owner}/{repo}" --status failure --limit 5
 ```
 
 ### 6. Fix / Install / Configure
@@ -232,7 +232,7 @@ sudo systemctl restart actions-runner
 
 # Verify it reconnects
 sleep 5
-gh api repos/${SEAMONSTER_ORG}/${REPO}/actions/runners | \
+gh api repos/{owner}/{repo}/actions/runners | \
   jq '.runners[] | {name, status}'
 ```
 
@@ -248,7 +248,7 @@ jq --version
 systemctl is-active "seamonster-${SERVICE}"
 
 # Verify the CI runner is online
-gh api repos/${SEAMONSTER_ORG}/${REPO}/actions/runners | \
+gh api repos/{owner}/{repo}/actions/runners | \
   jq '.runners[] | select(.status == "online")'
 
 # Run a smoke test if applicable
@@ -430,7 +430,7 @@ the Captain or environment):
 
 ```bash
 # Verify GitHub secrets are accessible in workflows
-gh secret list --repo "${SEAMONSTER_ORG}/${REPO}" 2>/dev/null
+gh secret list --repo "{owner}/{repo}" 2>/dev/null
 
 # Check that env files exist with correct permissions
 ENV_DIR="${SEAMONSTER_ENV:-/opt/seamonster/env}"
