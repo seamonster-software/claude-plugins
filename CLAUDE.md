@@ -4,7 +4,7 @@ This is the core product repo. Full system design is in [`seamonster`](https://g
 
 ## Quick Context
 
-Sea Monster is an autonomous AI crew that builds, ships, and markets software 24/7. This repo IS the product — a Claude Code plugin distributed via marketplace. Users install it with `claude plugin add seamonster-software/claude-plugins`.
+Sea Monster is an autonomous AI crew that builds, ships, and markets software autonomously. This repo IS the product — a Claude Code plugin distributed via marketplace. Users install it with `claude plugin add seamonster-software/claude-plugins`. The plugin namespace is `x` — commands are `/x:init`, `/x:work`, `/x:spawn`, etc.
 
 ### Repo Map
 
@@ -17,8 +17,10 @@ Sea Monster is an autonomous AI crew that builds, ships, and markets software 24
 
 - **Distribution:** Free core in public marketplace, paid packs in private marketplace repos
 - **Dual runtime:** Claude Code (interactive, Max subscription) + Pi/Ollama (autonomous, API key)
-- **Bridge:** Coordination repo created by `/seamonster:init` — Captain's single point of contact
-- **Platform:** GitHub only (issues, projects, actions, notifications)
+- **Plugin namespace:** `x` — commands are `/x:init`, `/x:work`, `/x:spawn`, `/x:orders`, `/x:voyage`, `/x:crew-status`
+- **Bridge:** Coordination via file-based state machine in `.bridge/orders/`
+- **Platform:** Git (any host) — file-based state machine, not GitHub-specific
+- **Notifications:** ntfy (bidirectional — file orders, receive status, respond to blockers from phone)
 - **Competitive position:** Sea Monster = business-focused 24/7 autonomy via git state machine
 
 ## Repo Structure
@@ -26,7 +28,7 @@ Sea Monster is an autonomous AI crew that builds, ships, and markets software 24
 ```
 seamonster-software/claude-plugins/
 ├── .claude-plugin/marketplace.json     # Marketplace manifest
-├── seamonster/                         # Core plugin
+├── x/                                  # Core plugin (namespace: x)
 │   ├── .claude-plugin/plugin.json      # Plugin manifest
 │   ├── agents/                         # 13 core agents
 │   │   ├── orchestrator.md
@@ -47,8 +49,8 @@ seamonster-software/claude-plugins/
 │   │   ├── contract-patterns.md
 │   │   └── escalation-protocol.md
 │   ├── commands/                       # Slash commands
-│   │   ├── init.md                     # /seamonster:init — creates bridge, onboards repos
-│   │   ├── work.md                     # /seamonster:work — poll queue, dispatch agents
+│   │   ├── init.md                     # /x:init — creates bridge, onboards repos
+│   │   ├── work.md                     # /x:work — poll queue, dispatch agents
 │   │   ├── crew-status.md
 │   │   ├── spawn.md
 │   │   ├── orders.md
@@ -80,7 +82,7 @@ seamonster-software/claude-plugins/
 - Reviewer is always read-only (no Edit/Write tools)
 - Agent descriptions must include specific trigger patterns, not vague summaries
 - Workflows use repo-relative paths (`./lib/`) — no SEAMONSTER_ROOT env var
-- `/seamonster:init` uses `gh` CLI — no raw curl in commands
+- `/x:init` uses `gh` CLI — no raw curl in commands
 - Plugin typeahead requires auto-discovery — no `name` field in command frontmatter, no component arrays in plugin.json
 - Agent frontmatter SHOULD have `name` field; command frontmatter should NOT (agents use name for display, commands use filename)
 - When dispatching multiple builders to same repo, use `isolation: "worktree"` to avoid branch collisions

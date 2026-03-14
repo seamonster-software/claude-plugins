@@ -2,7 +2,7 @@
 description: Create the Sea Monster bridge repo, scan the org for existing repos, and onboard them with workflows and lib scripts. The single entry point for setting up Sea Monster.
 ---
 
-# /seamonster:init — Set Up Sea Monster
+# /x:init — Set Up Sea Monster
 
 This is the one-time onboarding command. It creates the bridge (coordination repo), scans the org for existing repos, and pushes workflows + lib scripts to each one.
 
@@ -50,7 +50,7 @@ PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-}"
 
 # Fallback: search for the plugin
 if [[ -z "$PLUGIN_ROOT" ]]; then
-  PLUGIN_ROOT=$(find ~/.claude/plugins -name "plugin.json" -path "*/seamonster/*" 2>/dev/null | head -1 | xargs dirname | xargs dirname 2>/dev/null || echo "")
+  PLUGIN_ROOT=$(find ~/.claude/plugins -name "plugin.json" -path "*/x/*" 2>/dev/null | head -1 | xargs dirname | xargs dirname 2>/dev/null || echo "")
 fi
 ```
 
@@ -221,8 +221,8 @@ Sea Monster initialized!
 
 Next steps:
   1. File issues in the bridge repo — use issue templates
-  2. Run /seamonster:orders to check for work
-  3. Run /seamonster:spawn to assign agents to issues
+  2. Run /x:orders to check for work
+  3. Run /x:spawn to assign agents to issues
   4. For 24/7 autonomy, set up a runner on a VPS and configure secrets
 
 Bridge URL: <url>

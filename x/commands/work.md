@@ -2,7 +2,7 @@
 description: Poll the bridge for actionable issues and spawn agents to work them. The Captain's 'go work' button.
 ---
 
-# /seamonster:work — Work the Queue
+# /x:work — Work the Queue
 
 Poll all repos in the org for actionable issues and spawn the right crew member for each one. This is how you kick off the autonomous loop from an interactive session.
 
@@ -150,7 +150,7 @@ After dispatching, summarize:
 - Builder → project-beta #15 (User onboarding flow)
 - Reviewer → project-alpha PR #15 (Auth middleware)
 
-3 agents working. Run /seamonster:crew-status to check progress.
+3 agents working. Run /x:crew-status to check progress.
 ```
 
 ## Dispatch Rules
@@ -165,6 +165,6 @@ After dispatching, summarize:
 
 ## Notes
 
-- This command replaces the autonomous workflow trigger. Instead of GitHub Actions firing on label changes, the Captain runs `/seamonster:work` and agents work within their interactive session.
-- The spawned agents should use the Agent tool with the appropriate `subagent_type` (seamonster:Builder, seamonster:Reviewer, seamonster:Deployer).
-- If no actionable work is found, say so: "No actionable work in the queue. File issues in the bridge or run /seamonster:orders for the full picture."
+- This command replaces the autonomous workflow trigger. Instead of GitHub Actions firing on label changes, the Captain runs `/x:work` and agents work within their interactive session.
+- The spawned agents should use the Agent tool with the appropriate `subagent_type` (x:Builder, x:Reviewer, x:Deployer).
+- If no actionable work is found, say so: "No actionable work in the queue. File issues in the bridge or run /x:orders for the full picture."

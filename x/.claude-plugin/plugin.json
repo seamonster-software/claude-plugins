@@ -1,0 +1,8 @@
+{
+  "name": "x",
+  "version": "0.4.0",
+  "description": "Sea Monster — Autonomous AI Crew. Agents coordinate via file-based state machine (.bridge/orders/), notify via ntfy, and build/ship/market software autonomously.",
+  "author": {
+    "name": "Sea Monster Software"
+  }
+}
