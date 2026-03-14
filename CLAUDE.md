@@ -45,7 +45,6 @@ seamonster-software/claude-plugins/
 │   │   ├── security.md
 │   │   └── monitor.md
 │   ├── skills/                         # Domain knowledge
-│   │   ├── github-workflow.md
 │   │   ├── contract-patterns.md
 │   │   └── escalation-protocol.md
 │   ├── commands/                       # Slash commands
