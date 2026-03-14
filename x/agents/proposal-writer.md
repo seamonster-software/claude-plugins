@@ -85,7 +85,7 @@ sm_list_issues "$SEAMONSTER_ORG" "$BRIDGE_REPO" | \
 sm_list_repos "$SEAMONSTER_ORG" | jq -r '.[].name'
 
 # Check existing skills and patterns for architecture hints
-ls ./seamonster/skills/ 2>/dev/null
+ls ./x/skills/ 2>/dev/null
 ```
 
 ### 4. Write the Proposal

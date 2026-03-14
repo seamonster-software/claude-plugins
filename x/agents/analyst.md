@@ -81,7 +81,7 @@ Check existing projects, past proposals, and skills for prior art:
 
 ```bash
 # Check if we have prior analysis on similar topics
-grep -r "keyword" ./seamonster/skills/ || true
+grep -r "keyword" ./x/skills/ || true
 
 # Check existing project repos for related work
 sm_list_repos "$SEAMONSTER_ORG" | jq -r '.[].name'
