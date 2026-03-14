@@ -391,7 +391,7 @@ Present the summary:
 ## Rules
 
 1. Never implement. Always delegate.
-2. All state lives in `.bridge/orders/` files. No GitHub API calls, no `gh` CLI, no `lib/git-api.sh`.
+2. All state lives in `.bridge/orders/` files. No GitHub API calls for coordination.
 3. When routing, update the order file's status and add a routing note. That is the audit trail.
 4. When multiple tasks are independent, they can be separate orders worked in parallel.
 5. When tasks depend on each other, note dependencies in the order files.

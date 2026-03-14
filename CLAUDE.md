@@ -11,7 +11,7 @@ Sea Monster is an autonomous AI crew that builds, ships, and markets software au
 | Repo | Purpose |
 |------|---------|
 | [`seamonster`](https://github.com/seamonster-software/seamonster) | System design (PROJECT.md), docs, website |
-| `claude-plugins` (this repo) | Core plugin — agents, skills, commands, hooks, lib, templates |
+| `claude-plugins` (this repo) | Core plugin — agents, skills, commands, hooks |
 
 ### Key Decisions
 
@@ -53,15 +53,8 @@ seamonster-software/claude-plugins/
 │   │   ├── spawn.md
 │   │   ├── order.md
 │   │   └── voyage.md
-│   ├── hooks/
-│   │   └── hooks.json
-│   ├── lib/                            # LEGACY — remove in Wave 5
-│   │   ├── git-api.sh                  # Was: sm_* functions (replaced by file-based ops)
-│   │   ├── github-api.sh              # Was: GitHub backend
-│   │   └── claude-runner.sh
-│   └── templates/                      # LEGACY — remove in Wave 5
-│       ├── bridge/                     # Was: bridge repo template
-│       └── project/                    # Was: project repo template
+│   └── hooks/
+│       └── hooks.json
 ```
 
 ## Conventions
