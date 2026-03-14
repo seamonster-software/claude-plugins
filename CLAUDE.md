@@ -17,7 +17,7 @@ Sea Monster is an autonomous AI crew that builds, ships, and markets software au
 
 - **Distribution:** Free core in public marketplace, paid packs in private marketplace repos
 - **Dual runtime:** Claude Code (interactive, Max subscription) + Pi/Ollama (autonomous, API key)
-- **Plugin namespace:** `x` — commands are `/x:init`, `/x:work`, `/x:spawn`, `/x:orders`, `/x:voyage`, `/x:crew-status`
+- **Plugin namespace:** `x` — commands are `/x:init`, `/x:work`, `/x:spawn`, `/x:order`, `/x:voyage`
 - **Bridge:** Coordination via file-based state machine in `.bridge/orders/`
 - **Platform:** Git (any host) — file-based state machine, not GitHub-specific
 - **Notifications:** ntfy (bidirectional — file orders, receive status, respond to blockers from phone)
@@ -51,9 +51,8 @@ seamonster-software/claude-plugins/
 │   ├── commands/                       # Slash commands
 │   │   ├── init.md                     # /x:init — creates bridge, onboards repos
 │   │   ├── work.md                     # /x:work — poll queue, dispatch agents
-│   │   ├── crew-status.md
 │   │   ├── spawn.md
-│   │   ├── orders.md
+│   │   ├── order.md
 │   │   └── voyage.md
 │   ├── hooks/
 │   │   └── hooks.json
